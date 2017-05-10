@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,6 +20,13 @@
 #include "numbervalue.h"
 #include "vectoriterator.h"
 #include "rangevalue.h"
+#include "booleanvalue.h"
+#include "rmath.h"
+#include "onceonly.h"
+
+VectorValue::VectorValue()
+{
+}
 
 VectorValue::VectorValue(QList<Value*> values)
 {
@@ -30,10 +37,11 @@ QString VectorValue::getValueString() const
 {
 	QString result;
 	result.append("[");
-	for(int i=0; i<children.size(); i++) {
-		if(i>0)
+	OnceOnly first;
+	foreach(Value* v,children) {
+		if(!first())
 			result.append(",");
-		result.append(children.at(i)->getValueString());
+		result.append(v->getValueString());
 	}
 	result.append("]");
 	return result;
@@ -49,6 +57,13 @@ VectorValue* VectorValue::toVector(int)
 	return this;
 }
 
+Value* VectorValue::toNumber()
+{
+	if(children.size()==1)
+		return children.at(0)->toNumber();
+	return Value::undefined();
+}
+
 Point VectorValue::getPoint() const
 {
 
@@ -61,7 +76,7 @@ Point VectorValue::getPoint() const
 	if(s>2)
 		nz=dynamic_cast<NumberValue*>(children.at(2));
 
-	double x=0,y=0,z=0;
+	decimal x=0,y=0,z=0;
 	if(nx)  {
 		x=nx->getNumber();
 	}
@@ -74,21 +89,34 @@ Point VectorValue::getPoint() const
 	return Point(x,y,z);
 }
 
+void VectorValue::getXYZ(decimal& x,decimal& y,decimal& z)
+{
+	Point p=getPoint();
+	p.getXYZ(x,y,z);
+}
+
 Iterator<Value*>* VectorValue::createIterator()
 {
 	return new VectorIterator(this->children);
 }
 
-QList<Value*> VectorValue::getChildren() const
+QList<Value*> VectorValue::getChildren()
 {
 	return this->children;
 }
 
 Value* VectorValue::operation(Expression::Operator_e e)
 {
+	if(e==Expression::Length) {
+		Value* v=Value::operation(this,Expression::Multiply,this);
+		NumberValue* n=dynamic_cast<NumberValue*>(v);
+		if(n)
+			return new NumberValue(r_sqrt(n->getNumber()));
+		return Value::undefined();
+	}
 	QList<Value*> result;
-	for(int i=0; i<this->children.size(); i++)
-		result.append(Value::operation(this->children.at(i),e));
+	foreach(Value* c,children)
+		result.append(Value::operation(c,e));
 	return new VectorValue(result);
 }
 
@@ -97,45 +125,126 @@ Value* VectorValue::operation(Value& v, Expression::Operator_e e)
 	QList<Value*> result;
 	VectorValue* vec=dynamic_cast<VectorValue*>(&v);
 	if(vec) {
-		if(e==Expression::OuterProduct) {
-			for(int i=0; i<vec->children.size(); i++)
-				result.append(Value::operation(this,e,vec->children.at(i)));
-		} else if(e==Expression::Multiply || e==Expression::Divide) {
-			//TODO implement multiply and divide
-			return this;
-		} else if(e==Expression::Concatenate) {
-			result=this->children;
-			foreach(Value* child,vec->children)
-				result.append(child);
-		} else {
-			e=convertOperation(e);
-			for(int i=0; i<children.size() && i<vec->children.size(); i++)
-				result.append(Value::operation(this->children.at(i),e,vec->children.at(i)));
-		}
-	}
+		QList<Value*> a=this->getChildren();
+		QList<Value*> b=vec->getChildren();
 
-	RangeValue* rng=dynamic_cast<RangeValue*>(&v);
-	if(rng) {
-		if(e==Expression::Concatenate) {
-			result=this->children;
-			Iterator<Value*>* i=rng->createIterator();
-			for(i->first(); !i->isDone(); i->next())
-				result.append(i->currentItem());
+		if(e==Expression::CrossProduct) {
+			int s=a.size();
+			if(s<2||s>3||s!=b.size())
+				return Value::undefined();
+
+			//[a1*b2 - a2*b1, a2*b0 - a0*b2, a0*b1 - a1*b0]
+			Value* a0b1=Value::operation(a.at(0),Expression::Multiply,b.at(1));
+			Value* a1b0=Value::operation(a.at(1),Expression::Multiply,b.at(0));
+			Value* z=Value::operation(a0b1,Expression::Subtract,a1b0);
+
+			if(s==2)
+				return z;
+
+			Value* a1b2=Value::operation(a.at(1),Expression::Multiply,b.at(2));
+			Value* a2b1=Value::operation(a.at(2),Expression::Multiply,b.at(1));
+			Value* a2b0=Value::operation(a.at(2),Expression::Multiply,b.at(0));
+			Value* a0b2=Value::operation(a.at(0),Expression::Multiply,b.at(2));
+			Value* x=Value::operation(a1b2,Expression::Subtract,a2b1);
+			Value* y=Value::operation(a2b0,Expression::Subtract,a0b2);
+
+			result.append(x);
+			result.append(y);
+			result.append(z);
+			return new VectorValue(result);
+
+		} else if(e==Expression::Multiply||e==Expression::DotProduct) {
+			int s=std::min(a.size(),b.size());
+			if(s<=0)
+				return Value::undefined();
+			Value* total=new NumberValue(0.0);
+			for(int i=0; i<s; i++) {
+				Value* r=Value::operation(a.at(i),Expression::Multiply,b.at(i));
+				total=Value::operation(total,Expression::Add,r);
+			}
+			return total;
+		} else if(e==Expression::Divide) {
+			//TODO vector division?
+			return this;
+		} else if(e==Expression::Length) {
+			Value* a=Value::operation(this,Expression::Multiply,this);
+			Value* b=Value::operation(&v,Expression::Multiply,&v);
+			Value* n=Value::operation(a,Expression::Multiply,b);
+			NumberValue* l=dynamic_cast<NumberValue*>(n);
+			if(l)
+				return new NumberValue(r_sqrt(l->getNumber()));
+			return Value::undefined();
+		} else if(e==Expression::Concatenate) {
+			result=a;
+			result.append(b);
+		} else if(e==Expression::Equal||e==Expression::NotEqual) {
+			bool eq=(a.size()==b.size());
+			if(e==Expression::NotEqual && !eq)
+				return new BooleanValue(true);
+			if(eq)
+				for(int i=0; i<a.size(); i++) {
+					Value* eqVec=Value::operation(a.at(i),e,b.at(i));
+					if(e==Expression::NotEqual && eqVec->isTrue())
+						return new BooleanValue(true);
+					if(!eqVec->isTrue())
+						eq=false;
+				}
+			return new BooleanValue(eq);
+		} else {
+			//Apply componentwise operations
+			e=convertOperation(e);
+			int as=a.size();
+			int bs=b.size();
+			for(int i=0; i<as||i<bs; i++) {
+				Value* r;
+				if(as<bs&&i>=as) {
+					r=b.at(i);
+				} else if(bs<as&&i>=bs) {
+					r=a.at(i);
+				} else {
+					r=Value::operation(a.at(i),e,b.at(i));
+				}
+				result.append(r);
+			}
 		}
+		return new VectorValue(result);
 	}
 
 	NumberValue* num = dynamic_cast<NumberValue*>(&v);
 	if(num) {
 		if(e==Expression::Concatenate) {
-			result=this->children;
+			QList<Value*> a=this->getChildren();
+			result=a;
 			result.append(num);
+		} else if(e==Expression::Exponent) {
+			QList<Value*> a=this->getChildren();
+			Value* total=new NumberValue(0);
+			for(int i=0; i<a.size(); i++) {
+				Value* r=Value::operation(a.at(i),e,num);
+				total=Value::operation(total,Expression::Add,r);
+			}
+			return total;
+		} else if(e==Expression::Index) {
+			Iterator<Value*>* it=this->createIterator();
+			int i=num->toInteger();
+			if(i>=0) {
+				it->first();
+				for(int j=0; j<i&&!it->isDone(); ++j)
+					it->next();
+				if(!it->isDone())
+					return it->currentItem();
+			}
+			return Value::undefined();
 		} else {
+			QList<Value*> a=this->getChildren();
 			e=convertOperation(e);
-			for(int i=0; i<children.size(); i++)
-				result.append(Value::operation(this->children.at(i),e,num));
+			foreach(Value* c,a)
+				result.append(Value::operation(c,e,num));
 		}
+		return new VectorValue(result);
 	}
-	return new VectorValue(result);
+
+	return Value::operation(v,e);
 }
 
 Expression::Operator_e VectorValue::convertOperation(Expression::Operator_e e)
@@ -145,8 +254,6 @@ Expression::Operator_e VectorValue::convertOperation(Expression::Operator_e e)
 		return Expression::Multiply;
 	case Expression::ComponentwiseDivide:
 		return Expression::Divide;
-	case Expression::OuterProduct:
-		return Expression::Multiply;
 	default:
 		return e;
 	}

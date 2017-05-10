@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,9 +21,11 @@
 
 #include <QTextStream>
 #include "nodevisitor.h"
+#include "polyhedron.h"
 #include "node/primitivenode.h"
 #include "node/polylinenode.h"
 #include "node/unionnode.h"
+#include "node/groupnode.h"
 #include "node/differencenode.h"
 #include "node/intersectionnode.h"
 #include "node/symmetricdifferencenode.h"
@@ -39,6 +41,25 @@
 #include "node/outlinenode.h"
 #include "node/importnode.h"
 #include "node/resizenode.h"
+#include "node/alignnode.h"
+#include "node/pointnode.h"
+#include "node/slicenode.h"
+#include "node/productnode.h"
+#include "node/projectionnode.h"
+#include "node/decomposenode.h"
+#include "node/complementnode.h"
+#include "node/radialsnode.h"
+#include "node/volumesnode.h"
+#include "node/triangulatenode.h"
+#include "node/materialnode.h"
+#include "node/discretenode.h"
+#include "node/normalsnode.h"
+#include "node/simplifynode.h"
+#include "node/childrennode.h"
+
+#if USE_CGAL
+#include "cgalprimitive.h"
+#endif
 
 class NodePrinter : public NodeVisitor
 {
@@ -47,6 +68,7 @@ public:
 	void visit(PrimitiveNode*);
 	void visit(PolylineNode*);
 	void visit(UnionNode*);
+	void visit(GroupNode*);
 	void visit(DifferenceNode*);
 	void visit(IntersectionNode*);
 	void visit(SymmetricDifferenceNode*);
@@ -60,11 +82,35 @@ public:
 	void visit(OffsetNode*);
 	void visit(OutlineNode*);
 	void visit(ImportNode*);
-	void printOperation(Node*,QString name);
 	void visit(TransformationNode*);
 	void visit(ResizeNode*);
+	void visit(AlignNode*);
+	void visit(PointNode*);
+	void visit(SliceNode*);
+	void visit(ProductNode*);
+	void visit(ProjectionNode*);
+	void visit(DecomposeNode*);
+	void visit(ComplementNode*);
+	void visit(RadialsNode*);
+	void visit(VolumesNode*);
+	void visit(TriangulateNode*);
+	void visit(MaterialNode*);
+	void visit(DiscreteNode*);
+	void visit(NormalsNode*);
+	void visit(SimplifyNode*);
+	void visit(ChildrenNode*);
 private:
 	QTextStream& result;
+	void printChildren(Node*);
+	void printArguments(Point);
+	void printArguments(Polygon);
+	void printPrimitive(Primitive* pr);
+	void printPrimitive(Polyhedron*);
+#if USE_CGAL
+	void printPrimitive(CGALPrimitive*);
+	void printPoint(CGAL::Point3,bool);
+#endif
+	void printArguments(QList<AlignNode::Face_t> t);
 };
 
 #endif // NODEPRINTER_H

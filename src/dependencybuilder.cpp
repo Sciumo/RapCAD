@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@ DependencyBuilder::DependencyBuilder()
 }
 
 DependencyBuilder::~DependencyBuilder()
+{
+}
+
+void DependencyBuilder::buildFileLocation(QString)
 {
 }
 
@@ -128,7 +132,7 @@ Statement* DependencyBuilder::buildStatement(Variable*,Expression*)
 	return NULL;
 }
 
-Statement* DependencyBuilder::buildStatement(QString*,Variable::Type_e,Expression*)
+Statement* DependencyBuilder::buildStatement(QString*,Variable::Storage_e,Expression*)
 {
 	return NULL;
 }
@@ -218,6 +222,11 @@ Instance* DependencyBuilder::buildInstance(Instance::Type_e,Instance*)
 	return NULL;
 }
 
+Instance* DependencyBuilder::buildInstance(Instance::Type_e,QString*,QList<Argument*>*)
+{
+	return NULL;
+}
+
 Instance* DependencyBuilder::buildInstance(QString*,QList<Argument*>*)
 {
 	return NULL;
@@ -298,7 +307,7 @@ Expression* DependencyBuilder::buildLiteral(bool)
 	return NULL;
 }
 
-Expression* DependencyBuilder::buildLiteral(double)
+Expression* DependencyBuilder::buildLiteral(decimal*)
 {
 	return NULL;
 }
@@ -318,7 +327,7 @@ Expression* DependencyBuilder::buildVariable(Variable*)
 	return NULL;
 }
 
-Variable* DependencyBuilder::buildVariable(QString*,Variable::Type_e)
+Variable* DependencyBuilder::buildVariable(QString*,Variable::Storage_e)
 {
 	return NULL;
 }
@@ -348,7 +357,7 @@ Expression* DependencyBuilder::buildExpression(Expression*,Expression*,Expressio
 	return NULL;
 }
 
-Expression* DependencyBuilder::buildExpression(QList<Expression*>*)
+Expression* DependencyBuilder::buildExpression(QList<Expression*>*,int)
 {
 	return NULL;
 }

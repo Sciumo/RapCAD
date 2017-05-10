@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,14 +21,16 @@
 
 #include <QTextStream>
 #include "module.h"
+#include "onceonly.h"
 
 class EchoModule : public Module
 {
 public:
-	EchoModule(QTextStream&);
-	Node* evaluate(Context*,QList<Node*>);
+	EchoModule(Reporter*);
+	Node* evaluate(Context*);
 private:
 	QTextStream& output;
+	static OnceOnly depricateWarning;
 };
 
 #endif // ECHOMODULE_H

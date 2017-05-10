@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 #define GLIDEMODULE_H
 
 #include "module.h"
-#include "context.h"
 
 class GlideModule : public Module
 {
+	Q_DECLARE_TR_FUNCTIONS(GlideModule)
 public:
-	GlideModule();
-	Node* evaluate(Context*,QList<Node*>);
+	GlideModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // GLIDEMODULE_H

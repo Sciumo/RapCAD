@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,44 +17,47 @@
  */
 
 #include "scalemodule.h"
+#include "context.h"
 #include "vectorvalue.h"
 #include "node/transformationnode.h"
 
-ScaleModule::ScaleModule() : Module("scale")
+ScaleModule::ScaleModule(Reporter* r) : Module(r,"scale")
 {
+	addDescription(tr("Scales its children by the given vector."));
+	addParameter("size",tr("The factor by which to scale the object."));
+	addParameter("reference",tr("A center reference point for the scaling."));
 }
 
-Node* ScaleModule::evaluate(Context* ctx,QList<Node*> childs)
+Node* ScaleModule::evaluate(Context* ctx)
 {
 	Point size;
-	VectorValue* sizeVal=dynamic_cast<VectorValue*>(ctx->getArgument(0,"size"));
+	VectorValue* sizeVal=dynamic_cast<VectorValue*>(getParameterArgument(ctx,0));
 	if(sizeVal)
 		size=sizeVal->getPoint();
 
 	Point ref;
-	VectorValue* refVal=dynamic_cast<VectorValue*>(ctx->getArgument(1,"reference"));
+	VectorValue* refVal=dynamic_cast<VectorValue*>(getParameterArgument(ctx,1));
 	if(refVal)
 		ref=refVal->getPoint();
 
-	double x=0,y=0,z=0;
+	decimal x=0,y=0,z=0;
 	size.getXYZ(x,y,z);
 
-	double a=0,b=0,c=0;
+	decimal a=0,b=0,c=0;
 	ref.getXYZ(a,b,c);
 
 	//Derived reference translation using
-	//http://tinyurl.com/3zhnpkw
-	double m[16] = {
-		x,0,0,0,
-		0,y,0,0,
-		0,0,z,0,
-		a-(a*x),b-(b*x),c-(c*x),1
-	};
+	//http://tinyurl.com/nfmph3r
+	TransformMatrix* m = new TransformMatrix(
+		x,0,0,a-(a*x),
+		0,y,0,b-(b*x),
+		0,0,z,c-(c*x),
+		0,0,0,1
+	);
 
 	TransformationNode* n=new TransformationNode();
-	for(int i=0; i<16; i++)
-		n->matrix[i]=m[i];
+	n->setMatrix(m);
 
-	n->setChildren(childs);
+	n->setChildren(ctx->getInputNodes());
 	return n;
 }

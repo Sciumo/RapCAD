@@ -1,0 +1,21 @@
+/* Layers function called by RapCAD.
+*  RapCAD will call this function to determine
+*  the number of manufacturing itterations to
+*  run
+*/
+function layers(height) = ceil(height/0.4);
+
+/* Manufacture module called by RapCAD.
+*  The manufacture module will be called 
+*  for each layer, the output could be 
+*  a 2D path.
+*/
+module manufacture(layer){
+ a=layer%2?45:-45;
+ rotate([0,0,a])
+  decompose()
+   rotate([0,0,-a])
+    slice(height=layer*0.4,thickness=0.4)
+     child(0);
+}
+

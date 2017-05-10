@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,40 +17,43 @@
  */
 
 #include "beziersurfacemodule.h"
+#include "context.h"
 #include "vectorvalue.h"
 #include "node/primitivenode.h"
-#include "math.h"
+#include "rmath.h"
 
-BezierSurfaceModule::BezierSurfaceModule() : Module("bezier_surface")
+BezierSurfaceModule::BezierSurfaceModule(Reporter* r) : Module(r,"bezier_surface")
 {
+	addDescription(tr("Constructs a bezier surface."));
+	addParameter("mesh",tr("A 4 by 4 matrix of points."));
 }
 
-double BezierSurfaceModule::bez03(double u)
+decimal BezierSurfaceModule::bez03(decimal u)
 {
-	return pow((1-u), 3);
+	return r_pow((1-u), 3);
 }
 
-double BezierSurfaceModule::bez13(double u)
+decimal BezierSurfaceModule::bez13(decimal u)
 {
-	return 3*u*(pow((1-u),2));
+	return 3*u*(r_pow((1-u),2));
 }
 
-double BezierSurfaceModule::bez23(double u)
+decimal BezierSurfaceModule::bez23(decimal u)
 {
-	return 3*(pow(u,2))*(1-u);
+	return 3*(r_pow(u,2))*(1-u);
 }
 
-double BezierSurfaceModule::bez33(double u)
+decimal BezierSurfaceModule::bez33(decimal u)
 {
-	return pow(u,3);
+	return r_pow(u,3);
 }
 
-Point BezierSurfaceModule::pointOnBez(Points cps, double u)
+Point BezierSurfaceModule::pointOnBez(Points cps, decimal u)
 {
-	double a=bez03(u),b=bez13(u),c=bez23(u),d=bez33(u);
-	double x=a*cps[0].getX()+b*cps[1].getX()+c*cps[2].getX()+d*cps[3].getX();
-	double y=a*cps[0].getY()+b*cps[1].getY()+c*cps[2].getY()+d*cps[3].getY();
-	double z=a*cps[0].getZ()+b*cps[1].getZ()+c*cps[2].getZ()+d*cps[3].getZ();
+	decimal a=bez03(u),b=bez13(u),c=bez23(u),d=bez33(u);
+	decimal x=a*cps[0].getX()+b*cps[1].getX()+c*cps[2].getX()+d*cps[3].getX();
+	decimal y=a*cps[0].getY()+b*cps[1].getY()+c*cps[2].getY()+d*cps[3].getY();
+	decimal z=a*cps[0].getZ()+b*cps[1].getZ()+c*cps[2].getZ()+d*cps[3].getZ();
 
 	return Point(x,y,z);
 }
@@ -66,67 +69,57 @@ Point BezierSurfaceModule::pointOnBezMesh(Mesh mesh,Vector uv)
 	return pointOnBez(p,uv[1]);
 }
 
-BezierSurfaceModule::Points BezierSurfaceModule::getCurveQuad(Mesh mesh,Vector u1v1,Vector u2v2)
-{
-	Vector a;
-	a.append(u1v1[0]);
-	a.append(u2v2[1]);
-	Vector b;
-	b.append(u2v2[0]);
-	b.append(u1v1[1]);
-
-	Points p;
-	p.append(pointOnBezMesh(mesh, a));
-	p.append(pointOnBezMesh(mesh, u1v1));
-	p.append(pointOnBezMesh(mesh, b));
-	p.append(pointOnBezMesh(mesh, u2v2));
-
-	return p;
-}
-
-Node* BezierSurfaceModule::evaluate(Context* ctx, QList<Node*>)
+Node* BezierSurfaceModule::evaluate(Context* ctx)
 {
 	Mesh mesh;
-	VectorValue* meshVec=dynamic_cast<VectorValue*>(ctx->getArgument(0,"mesh"));
+	VectorValue* meshVec=dynamic_cast<VectorValue*>(getParameterArgument(ctx,0));
 	if(meshVec) {
 		foreach(Value* pointsVal,meshVec->getChildren()) {
 			Points points;
 			VectorValue* pointsVec=dynamic_cast<VectorValue*>(pointsVal);
 			if(pointsVec)
 				foreach(Value* pointVal,pointsVec->getChildren()) {
-					VectorValue* pointVec=dynamic_cast<VectorValue*>(pointVal);
-					points.append(pointVec->getPoint());
-				}
+				VectorValue* pointVec=dynamic_cast<VectorValue*>(pointVal);
+				points.append(pointVec->getPoint());
+			}
 			mesh.append(points);
 		}
 	}
 
-	int steps=24; //TODO use getfragments and $fn,$fa,$fs variables;
+	int f=24; //TODO use getfragments and $fn,$fa,$fs variables;
 
-	PrimitiveNode* p=new PrimitiveNode();
-	for(double ustep=0; ustep<steps; ustep++) {
-		for(double vstep=0; vstep<steps; vstep++) {
-			double ufrac1=ustep/steps;
-			double ufrac2=(ustep+1)/steps;
-			double vfrac1=vstep/steps;
-			double vfrac2=(vstep+1)/steps;
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	for(int i=0; i<f; i++) {
+		for(int j=0; j<f; j++) {
 			Vector a;
-			a.append(ufrac1);
-			a.append(vfrac1);
-			Vector b;
-			b.append(ufrac2);
-			b.append(vfrac2);
-			Points quad = getCurveQuad(mesh,a,b);
+			decimal u=i;
+			decimal v=j;
+			a.append(u/f);
+			a.append(v/f);
 
-			p->createPolygon();
-			p->appendVertex(quad[0]);
-			p->appendVertex(quad[1]);
-			p->appendVertex(quad[2]);
+			p->createVertex(pointOnBezMesh(mesh,a));
+		}
+	}
 
-			p->createPolygon();
-			p->appendVertex(quad[0]);
-			p->appendVertex(quad[2]);
-			p->appendVertex(quad[3]);
+	Polygon* pg;
+	for(int u=0; u<f-1; u++) {
+		for(int v=0; v<f-1; v++) {
+
+			int i=(u*f)+v;
+			int j=((u+1)*f)+v;
+			int k=i+1;
+			int l=j+1;
+			pg=p->createPolygon();
+			pg->append(i);
+			pg->append(j);
+			pg->append(k);
+
+			pg=p->createPolygon();
+			pg->append(l);
+			pg->append(k);
+			pg->append(j);
 		}
 	}
 

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -282,7 +282,19 @@ unsigned int SyntaxHighlighter::buildDecrement()
 	return YY_CONTINUE;
 }
 
-unsigned int SyntaxHighlighter::buildOuterProduct()
+unsigned int SyntaxHighlighter::buildAddAssign()
+{
+	setFormat(startIndex,lexerleng,operatorFormat);
+	return YY_CONTINUE;
+}
+
+unsigned int SyntaxHighlighter::buildSubtractAssign()
+{
+	setFormat(startIndex,lexerleng,operatorFormat);
+	return YY_CONTINUE;
+}
+
+unsigned int SyntaxHighlighter::buildCrossProduct()
 {
 	setFormat(startIndex,lexerleng,operatorFormat);
 	return YY_CONTINUE;
@@ -337,6 +349,12 @@ unsigned int SyntaxHighlighter::buildMultiply()
 }
 
 unsigned int SyntaxHighlighter::buildDivide()
+{
+	setFormat(startIndex,lexerleng,operatorFormat);
+	return YY_CONTINUE;
+}
+
+unsigned int SyntaxHighlighter::buildLength()
 {
 	setFormat(startIndex,lexerleng,operatorFormat);
 	return YY_CONTINUE;

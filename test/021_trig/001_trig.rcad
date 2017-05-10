@@ -1,0 +1,4 @@
+function test() {
+a=180;
+return tan(a)==sin(a)/cos(a);
+}

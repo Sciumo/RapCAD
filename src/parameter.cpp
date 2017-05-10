@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -46,6 +46,16 @@ Expression* Parameter::getExpression() const
 void Parameter::setExpression(Expression* expr)
 {
 	this->expression = expr;
+}
+
+void Parameter::addDescription(QString d)
+{
+	description=d;
+}
+
+QString Parameter::getDescription() const
+{
+	return description;
 }
 
 void Parameter::accept(TreeVisitor& v)

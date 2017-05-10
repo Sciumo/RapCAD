@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,9 +27,14 @@ public:
 	TextValue(QString);
 	QString getValueString() const;
 	bool isTrue() const;
+	TextValue* toText();
+	Value* toNumber();
+	Iterator<Value*>* createIterator();
 private:
+	Value* operation(Expression::Operator_e);
 	Value* operation(Value&,Expression::Operator_e);
 	QString operation(QString,Expression::Operator_e,QString);
+	bool operation(TextValue*,Expression::Operator_e,TextValue*);
 	QString text;
 };
 

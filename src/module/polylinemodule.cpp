@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,24 +19,64 @@
 #include "polylinemodule.h"
 #include "node/polylinenode.h"
 #include "vectorvalue.h"
+#include "numbervalue.h"
 
-PolylineModule::PolylineModule() : Module("polyline")
+PolylineModule::PolylineModule(Reporter* r) : Module(r,"polyline")
 {
+	addDescription(tr("Constructs a line connecting multiple points."));
+	addParameter("points",tr("The vertices are provided by the points list."));
+	addParameter("lines",tr("The lines are a list of indices to the vertices"));
 }
 
-Node* PolylineModule::evaluate(Context* ctx,QList<Node*>)
+Node* PolylineModule::evaluate(Context* ctx)
 {
-	VectorValue* points=dynamic_cast<VectorValue*>(ctx->getArgument(0,"points"));
+	VectorValue* pointsVec=dynamic_cast<VectorValue*>(getParameterArgument(ctx,0));
+	VectorValue* linesVec=dynamic_cast<VectorValue*>(getParameterArgument(ctx,1));
 
-	PolylineNode* p=new PolylineNode();
+	PolylineNode* p=new PolylineNode(reporter);
 
-	Polygon polyline;
-	QList<Value*> children = points->getChildren();
-	foreach(Value* point, children) {
+	if(!pointsVec)
+		return p;
+
+	QList<Value*> points=pointsVec->getChildren();
+
+	foreach(Value* point, points) {
 		VectorValue* pointVec=dynamic_cast<VectorValue*>(point);
-		Point pt = pointVec->getPoint();
-		polyline.append(pt);
+		if(pointVec) {
+			Point pt = pointVec->getPoint();
+			p->createVertex(pt);
+
+		}
 	}
-	p->setPoints(polyline);
+
+	/* If we are just given a single argument of points
+	 * build a polyline from that. */
+	if(!linesVec) {
+		Polygon* pg=p->createPolygon();
+		for(int i=0; i<points.length(); ++i)
+			pg->append(i);
+		return p;
+	}
+
+	/* Otherwise use the lines argument to describe the multiple
+	 * polylines */
+	QList<Value*> lines=linesVec->getChildren();
+
+	foreach(Value* line,lines) {
+		VectorValue* lineVec=dynamic_cast<VectorValue*>(line);
+		if(lineVec) {
+			Polygon* pg=p->createPolygon();
+			foreach(Value* indexVal,lineVec->getChildren()) {
+				NumberValue* indexNum=dynamic_cast<NumberValue*>(indexVal);
+				if(indexNum) {
+					int index = indexNum->toInteger();
+					if(index>=0&&index<points.count()) {
+						pg->append(index);
+					}
+				}
+			}
+		}
+	}
+
 	return p;
 }

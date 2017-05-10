@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,18 +19,13 @@
 #ifndef POLYLINENODE_H
 #define POLYLINENODE_H
 
-#include "node.h"
-#include "polygon.h"
+#include "primitivenode.h"
 
-class PolylineNode : public Node
+class PolylineNode : public PrimitiveNode
 {
 public:
-	PolylineNode();
-	void setPoints(Polygon);
-	Polygon getPoints() const;
+	PolylineNode(Reporter*);
 	void accept(NodeVisitor&);
-private:
-	Polygon points;
 };
 
 #endif // POLYLINENODE_H

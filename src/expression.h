@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,10 @@ public:
 		ComponentwiseDivide,
 		Increment,
 		Decrement,
-		OuterProduct,
+		AddAssign,
+		SubAssign,
+		CrossProduct,
+		DotProduct,
 		Modulus,
 		Dot,
 		Add,
@@ -50,17 +53,23 @@ public:
 		LogicalAnd,
 		LogicalOr,
 		Invert,
-		Index
+		Index,
+		Length
 	};
 
 	Expression();
 	virtual ~Expression();
+
 	Operator_e getOp() const;
 	void setOp(Operator_e);
 	QString getOpString() const;
 	bool postFix();
+
+	int getLineNumber() const;
+	void setLineNumber(int value);
 private:
 	Operator_e op;
+	int lineNumber;
 };
 
 #endif // EXPRESSION_H

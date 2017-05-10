@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,19 +19,21 @@
 #ifndef RANGEVALUE_H
 #define RANGEVALUE_H
 
-#include "value.h"
+#include "vectorvalue.h"
 
-class RangeValue : public Value
+class RangeValue : public VectorValue
 {
 public:
 	RangeValue(Value*,Value*,Value*);
 	QString getValueString() const;
 	Iterator<Value*>* createIterator();
+	QList<Value*> getChildren();
 
 	Value* getStart() const;
 	Value* getStep() const;
 	Value* getFinish() const;
 private:
+	Value* operation(Expression::Operator_e);
 	Value* operation(Value&,Expression::Operator_e);
 	Value* start;
 	Value* step;

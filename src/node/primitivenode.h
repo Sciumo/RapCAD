@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,21 +22,20 @@
 #include <QList>
 #include <QString>
 #include "node.h"
-#include "point.h"
-#include "polygon.h"
+#include "primitive.h"
+#include "reporter.h"
 
 class PrimitiveNode : public Node
 {
 public:
-	PrimitiveNode();
-	void createPolygon();
-	void appendVertex(double x, double y, double z);
-	void appendVertex(Point p);
-	void prependVertex(Point p);
-	QList<Polygon> getPolygons() const;
+	PrimitiveNode(Reporter*);
+	Polygon* createPolygon();
+	void createVertex(decimal x, decimal y, decimal z);
+	void createVertex(Point p);
 	void accept(NodeVisitor&);
+	Primitive* getPrimitive();
 private:
-	QList<Polygon> polygons;
+	Primitive* primitive;
 };
 
 #endif // PRIMITIVENODE_H

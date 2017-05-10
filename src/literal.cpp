@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,10 +23,7 @@
 
 Literal::Literal()
 {
-}
-
-Literal::~Literal()
-{
+	type=Literal::Undef;
 }
 
 void Literal::setValue(bool value)
@@ -35,7 +32,7 @@ void Literal::setValue(bool value)
 	this->boolean = value;
 }
 
-void Literal::setValue(double value)
+void Literal::setValue(decimal value)
 {
 	this->type = Literal::Number;
 	this->number = value;
@@ -53,7 +50,7 @@ QString Literal::getValueString() const
 	case Boolean:
 		return this->boolean ? "true" : "false";
 	case Number:
-		return QString().setNum(this->number,'g',16);
+		return to_string(number);
 	case Text:
 		return QString("\"%1\"").arg(text);
 	default:
@@ -71,7 +68,7 @@ Value* Literal::getValue() const
 	case Text:
 		return new TextValue(text);
 	default:
-		return new Value();
+		return Value::undefined();
 	}
 }
 

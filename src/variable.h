@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 class Variable : public Expression
 {
 public:
-	enum Type_e {
+	enum Storage_e {
 		Var,
 		Special,
 		Const,
@@ -36,12 +36,12 @@ public:
 	~Variable();
 	void setName(QString);
 	QString getName() const;
-	void setType(Type_e);
-	Type_e getType() const;
+	void setStorage(Storage_e);
+	Storage_e getStorage() const;
 	void accept(TreeVisitor&);
 private:
 	QString name;
-	Type_e type;
+	Storage_e storage;
 };
 
 #endif // VARIABLE_H

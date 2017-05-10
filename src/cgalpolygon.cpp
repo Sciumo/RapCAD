@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,34 +15,42 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#if USE_CGAL
 #include "cgalpolygon.h"
+#include "cgalprimitive.h"
 
-CGALPolygon::CGALPolygon()
+CGALPolygon::CGALPolygon(CGALPrimitive* p) : Polygon(p)
 {
-}
-
-void CGALPolygon::append(CGAL::Point3 p)
-{
-	points.append(p);
-}
-
-void CGALPolygon::prepend(CGAL::Point3 p)
-{
-	points.prepend(p);
 }
 
 QList<CGAL::Point3> CGALPolygon::getPoints() const
 {
+	QList<CGAL::Point3> points;
+	CGALPrimitive* pr=static_cast<CGALPrimitive*>(parent);
+	QList<CGAL::Point3> parentPoints=pr->getCGALPoints();
+	foreach(int i,indexes)
+		points.append(parentPoints.at(i));
 	return points;
 }
 
-void CGALPolygon::setNormal(CGAL::Vector3 v)
+CGAL::Vector3 CGALPolygon::getNormal() const
+{
+	return normal;
+}
+
+void CGALPolygon::setNormal(const CGAL::Vector3& v)
 {
 	normal=v;
 }
 
-CGAL::Vector3 CGALPolygon::getNormal()
+CGAL::Plane3 CGALPolygon::getPlane() const
 {
-	return normal;
+	return plane;
 }
+
+void CGALPolygon::setPlane(const CGAL::Plane3& p)
+{
+	plane=p;
+}
+
+#endif

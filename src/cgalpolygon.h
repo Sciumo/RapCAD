@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,25 +15,29 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#if USE_CGAL
 #ifndef CGALPOLYGON_H
 #define CGALPOLYGON_H
 
-#include <QList>
 #include "cgal.h"
 
-class CGALPolygon
+#include <QList>
+#include "polygon.h"
+
+class CGALPolygon : public Polygon
 {
 public:
-	CGALPolygon();
+	CGALPolygon(class CGALPrimitive*);
 	QList<CGAL::Point3> getPoints() const;
-	void append(CGAL::Point3);
-	void prepend(CGAL::Point3);
-	CGAL::Vector3 getNormal();
-	void setNormal(CGAL::Vector3);
+
 	CGAL::Vector3 getNormal() const;
+	void setNormal(const CGAL::Vector3&);
+
+	CGAL::Plane3 getPlane() const;
+	void setPlane(const CGAL::Plane3&);
 private:
-	QList<CGAL::Point3> points;
 	CGAL::Vector3 normal;
+	CGAL::Plane3 plane;
 };
 #endif // CGALPOLYGON_H
+#endif

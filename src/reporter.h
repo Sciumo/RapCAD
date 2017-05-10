@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,17 +19,33 @@
 #ifndef REPORTER_H
 #define REPORTER_H
 
+#include <QCoreApplication>
+#include <QElapsedTimer>
 #include <QTextStream>
 #include "abstracttokenbuilder.h"
 
 class Reporter
 {
+	Q_DECLARE_TR_FUNCTIONS(Reporter)
 public:
 	Reporter(QTextStream& s);
+	void startTiming();
+	void reportTiming(QString);
 	void reportSyntaxError(AbstractTokenBuilder*,QString,QString);
 	void reportLexicalError(AbstractTokenBuilder*,QString);
-private:
+	void reportFileMissingError(QString);
+	void reportWarning(QString);
+	void reportMessage(QString);
+	void reportException(QString);
+	void setReturnCode(int);
+	bool getReturnCode();
+	void outputTime(int);
+	void setKludge(int);
 	QTextStream& output;
+private:
+	QElapsedTimer* timer;
+	int returnCode;
+	int kludge;
 };
 
 #endif // REPORTER_H

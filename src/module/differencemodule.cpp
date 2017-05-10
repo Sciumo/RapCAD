@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,15 +17,16 @@
  */
 
 #include "differencemodule.h"
+#include "context.h"
 #include "node/differencenode.h"
 
-DifferenceModule::DifferenceModule() : Module("difference")
+DifferenceModule::DifferenceModule(Reporter* r) : Module(r,"difference")
 {
 }
 
-Node* DifferenceModule::evaluate(Context*,QList<Node*> childs)
+Node* DifferenceModule::evaluate(Context* ctx)
 {
 	DifferenceNode* d = new DifferenceNode();
-	d->setChildren(childs);
+	d->setChildren(ctx->getInputNodes());
 	return d;
 }

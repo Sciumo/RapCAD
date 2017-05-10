@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,21 +17,22 @@
  */
 
 #include "sqrtfunction.h"
+#include "context.h"
 #include "numbervalue.h"
-#include "math.h"
+#include "rmath.h"
 
 SqrtFunction::SqrtFunction() : Function("sqrt")
 {
+	addParameter("number");
 }
 
 Value* SqrtFunction::evaluate(Context* ctx)
 {
-	double num,result;
-	NumberValue* numVal=dynamic_cast<NumberValue*>(ctx->getArgument(0,"number"));
+	NumberValue* numVal=dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
 	if(numVal) {
-		num=numVal->getNumber();
-		result=sqrt(num);
-		return new NumberValue(result);
+		decimal num=numVal->getNumber();
+
+		return new NumberValue(r_sqrt(num));
 	}
-	return new Value();
+	return Value::undefined();
 }

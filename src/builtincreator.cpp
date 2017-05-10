@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@
 #include "module/cubemodule.h"
 #include "module/squaremodule.h"
 #include "module/cylindermodule.h"
+#include "module/conemodule.h"
 #include "module/cylindersurfacemodule.h"
 #include "module/prismmodule.h"
 #include "module/circlemodule.h"
 #include "module/polyhedronmodule.h"
+#include "module/polygonmodule.h"
 #include "module/polylinemodule.h"
 #include "module/beziersurfacemodule.h"
 
@@ -35,6 +37,7 @@
 #include "module/intersectionmodule.h"
 #include "module/translatemodule.h"
 #include "module/symmetricdifferencemodule.h"
+#include "module/multmatrixmodule.h"
 #include "module/minkowskimodule.h"
 #include "module/glidemodule.h"
 #include "module/linearextrudemodule.h"
@@ -52,57 +55,179 @@
 #include "module/outlinemodule.h"
 #include "module/importmodule.h"
 #include "module/resizemodule.h"
+#include "module/centermodule.h"
+#include "module/pointmodule.h"
+#include "module/slicemodule.h"
+#include "module/projectionmodule.h"
+#include "module/decomposemodule.h"
+#include "module/alignmodule.h"
+#include "module/complementmodule.h"
+#include "module/radialsmodule.h"
+#include "module/volumesmodule.h"
+#include "module/triangulatemodule.h"
+#include "module/materialmodule.h"
+#include "module/discretemodule.h"
+#include "module/childrenmodule.h"
+#include "module/normalsmodule.h"
+#include "module/simplifymodule.h"
+#include "module/chainhullmodule.h"
 
+#include "function/lengthfunction.h"
 #include "function/sqrtfunction.h"
 #include "function/sumfunction.h"
 #include "function/randfunction.h"
+#include "function/versionfunction.h"
+#include "function/strfunction.h"
+#include "function/sinfunction.h"
+#include "function/cosfunction.h"
+#include "function/concatfunction.h"
+#include "function/tanfunction.h"
+#include "function/absfunction.h"
+#include "function/signfunction.h"
+#include "function/minfunction.h"
+#include "function/maxfunction.h"
+#include "function/roundfunction.h"
+#include "function/ceilfunction.h"
+#include "function/floorfunction.h"
+#include "function/powfunction.h"
+#include "function/expfunction.h"
+#include "function/asinfunction.h"
+#include "function/acosfunction.h"
+#include "function/atanfunction.h"
+#include "function/atan2function.h"
+#include "function/coshfunction.h"
+#include "function/sinhfunction.h"
+#include "function/tanhfunction.h"
+#include "function/lnfunction.h"
+#include "function/logfunction.h"
+#include "function/radfunction.h"
+#include "function/degfunction.h"
+#include "function/numfunction.h"
+#include "function/normfunction.h"
+#include "function/angfunction.h"
+#include "function/crossfunction.h"
+#include "function/isboolfunction.h"
+#include "function/islistfunction.h"
+#include "function/isnumfunction.h"
+#include "function/israngefunction.h"
+#include "function/isstrfunction.h"
+#include "function/isintfunction.h"
+#include "function/ismat4x4function.h"
+#include "function/chrfunction.h"
 
-BuiltinCreator::BuiltinCreator(QTextStream& output)
+#include "module/writemodule.h"
+#include "module/writelnmodule.h"
+
+#include "treeprinter.h"
+
+BuiltinCreator::BuiltinCreator(Reporter* r)
 {
-	builtins.append(new EchoModule(output));
-	builtins.append(new CubeModule());
-	builtins.append(new SquareModule());
-	builtins.append(new CylinderModule());
-	builtins.append(new CylinderSurfaceModule());
-	builtins.append(new PrismModule());
-	builtins.append(new CircleModule());
-	builtins.append(new PolyhedronModule());
-	builtins.append(new PolylineModule());
-	builtins.append(new BezierSurfaceModule());
-	builtins.append(new DifferenceModule());
-	builtins.append(new UnionModule());
-	builtins.append(new GroupModule());
-	builtins.append(new IntersectionModule());
-	builtins.append(new TranslateModule());
-	builtins.append(new ResizeModule());
-	builtins.append(new SymmetricDifferenceModule());
-	builtins.append(new MinkowskiModule());
-	builtins.append(new GlideModule());
-	builtins.append(new HullModule());
-	builtins.append(new LinearExtrudeModule());
-	builtins.append(new RotateExtrudeModule());
-	builtins.append(new RotateModule());
-	builtins.append(new MirrorModule());
-	builtins.append(new ScaleModule());
-	builtins.append(new ShearModule());
-	builtins.append(new SphereModule());
-	builtins.append(new ChildModule());
-	builtins.append(new BoundsModule());
-	builtins.append(new SubDivisionModule());
-	builtins.append(new OffsetModule());
-	builtins.append(new OutlineModule());
+	builtins.append(new AlignModule(r));
+	builtins.append(new BezierSurfaceModule(r));
+	builtins.append(new BoundsModule(r));
+	builtins.append(new CenterModule(r));
+	builtins.append(new ChainHullModule(r));
+	builtins.append(new ChildModule(r));
+	builtins.append(new ChildrenModule(r));
+	builtins.append(new CircleModule(r));
+	builtins.append(new ComplementModule(r));
+	builtins.append(new ConeModule(r));
+	builtins.append(new CubeModule(r));
+	builtins.append(new CylinderModule(r));
+	builtins.append(new CylinderSurfaceModule(r));
+	builtins.append(new DecomposeModule(r));
+	builtins.append(new DifferenceModule(r));
+	builtins.append(new DiscreteModule(r));
+	builtins.append(new EchoModule(r));
+	builtins.append(new GlideModule(r));
+	builtins.append(new GroupModule(r));
+	builtins.append(new HullModule(r));
+	builtins.append(new IntersectionModule(r));
+	builtins.append(new LinearExtrudeModule(r));
+	builtins.append(new MaterialModule(r));
+	builtins.append(new MinkowskiModule(r));
+	builtins.append(new MirrorModule(r));
+	builtins.append(new MultMatrixModule(r));
+	builtins.append(new NormalsModule(r));
+	builtins.append(new OffsetModule(r));
+	builtins.append(new OutlineModule(r));
+	builtins.append(new PointModule(r));
+	builtins.append(new PolygonModule(r));
+	builtins.append(new PolyhedronModule(r));
+	builtins.append(new PolylineModule(r));
+	builtins.append(new PrismModule(r));
+	builtins.append(new ProjectionModule(r));
+	builtins.append(new RadialsModule(r));
+	builtins.append(new ResizeModule(r));
+	builtins.append(new RotateExtrudeModule(r));
+	builtins.append(new RotateModule(r));
+	builtins.append(new ScaleModule(r));
+	builtins.append(new ShearModule(r));
+	builtins.append(new SimplifyModule(r));
+	builtins.append(new SliceModule(r));
+	builtins.append(new SphereModule(r));
+	builtins.append(new SquareModule(r));
+	builtins.append(new SubDivisionModule(r));
+	builtins.append(new SymmetricDifferenceModule(r));
+	builtins.append(new TranslateModule(r));
+	builtins.append(new TriangulateModule(r));
+	builtins.append(new UnionModule(r));
+	builtins.append(new VolumesModule(r));
+	builtins.append(new WriteLnModule(r));
+	builtins.append(new WriteModule(r));
 
-	builtins.append(new SqrtFunction());
-	builtins.append(new SumFunction());
+	builtins.append(new AbsFunction());
+	builtins.append(new AcosFunction());
+	builtins.append(new AngFunction());
+	builtins.append(new AsinFunction());
+	builtins.append(new Atan2Function());
+	builtins.append(new AtanFunction());
+	builtins.append(new CeilFunction());
+	builtins.append(new ChrFunction());
+	builtins.append(new ConcatFunction());
+	builtins.append(new CosFunction());
+	builtins.append(new CoshFunction());
+	builtins.append(new CrossFunction());
+	builtins.append(new DegFunction());
+	builtins.append(new ExpFunction());
+	builtins.append(new FloorFunction());
+	builtins.append(new IsBoolFunction());
+	builtins.append(new IsIntFunction());
+	builtins.append(new IsListFunction());
+	builtins.append(new IsNumFunction());
+	builtins.append(new IsMat4x4Function());
+	builtins.append(new IsRangeFunction());
+	builtins.append(new IsStrFunction());
+	builtins.append(new LengthFunction());
+	builtins.append(new LnFunction());
+	builtins.append(new LogFunction());
+	builtins.append(new MaxFunction());
+	builtins.append(new MinFunction());
+	builtins.append(new NormFunction());
+	builtins.append(new NumFunction());
+	builtins.append(new PowFunction());
+	builtins.append(new RadFunction());
 	builtins.append(new RandFunction());
+	builtins.append(new RoundFunction());
+	builtins.append(new SignFunction());
+	builtins.append(new SinFunction());
+	builtins.append(new SinhFunction());
+	builtins.append(new SqrtFunction());
+	builtins.append(new StrFunction());
+	builtins.append(new SumFunction());
+	builtins.append(new TanFunction());
+	builtins.append(new TanhFunction());
+	builtins.append(new VersionFunction());
+
+	reporter=r;
 }
 
 BuiltinCreator* BuiltinCreator::instance=NULL;
 
-BuiltinCreator* BuiltinCreator::getInstance(QTextStream& output)
+BuiltinCreator* BuiltinCreator::getInstance(Reporter* r)
 {
 	if(!instance)
-		instance = new BuiltinCreator(output);
+		instance = new BuiltinCreator(r);
 
 	return instance;
 }
@@ -124,4 +249,16 @@ void BuiltinCreator::saveBuiltins(Script* sc)
 {
 	foreach(Declaration* d,builtins)
 		sc->removeDeclaration(d);
+}
+
+void BuiltinCreator::generateDocs()
+{
+	TreePrinter p(reporter->output);
+	generateDocs(p);
+}
+
+void BuiltinCreator::generateDocs(TreeVisitor& p)
+{
+	foreach(Declaration* d,builtins)
+		d->accept(p);
 }

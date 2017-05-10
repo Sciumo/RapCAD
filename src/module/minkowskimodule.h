@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,13 +20,12 @@
 #define MINKOWSKIMODULE_H
 
 #include "module.h"
-#include "context.h"
 
 class MinkowskiModule : public Module
 {
 public:
-	MinkowskiModule();
-	Node* evaluate(Context*,QList<Node*>);
+	MinkowskiModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // MINKOWSKIMODULE_H

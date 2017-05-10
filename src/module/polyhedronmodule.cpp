@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,27 +22,43 @@
 #include "numbervalue.h"
 #include "node/primitivenode.h"
 
-PolyhedronModule::PolyhedronModule() : PrimitiveModule("polyhedron")
+PolyhedronModule::PolyhedronModule(Reporter* r) : PrimitiveModule(r,"polyhedron")
 {
+	addDescription(tr("Construct a polyhedron. Special care must be taken to ensure the correct winding order."));
+	addParameter("points",tr("The vertices of the shape are provided by the points list"));
+	addParameter("faces",tr("The faces is list of indices to the vertices. These relate to the facets of the polyhedron."));
 }
 
-Node* PolyhedronModule::evaluate(Context* ctx,QList<Node*>)
+Node* PolyhedronModule::evaluate(Context* ctx)
 {
-	VectorValue* points=dynamic_cast<VectorValue*>(ctx->getArgument(0,"points"));
-	VectorValue* surfaces=dynamic_cast<VectorValue*>(ctx->getArgumentDeprecated(1,"surfaces","triangles"));
+	VectorValue* points=dynamic_cast<VectorValue*>(getParameterArgument(ctx,0));
+	VectorValue* faces=dynamic_cast<VectorValue*>(ctx->getArgumentDeprecated(1,"faces","triangles",reporter));
+
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	if(!points||!faces)
+		return p;
 
 	QList<Value*> children = points->getChildren();
-
-	PrimitiveNode* p=new PrimitiveNode();
-	foreach(Value* s,surfaces->getChildren()) {
-		p->createPolygon();
+	foreach(Value* child,children) {
+		VectorValue* point=dynamic_cast<VectorValue*>(child);
+		if(point) {
+			Point pt = point->getPoint();
+			p->createVertex(pt);
+		}
+	}
+	foreach(Value* s,faces->getChildren()) {
+		Polygon* pg=p->createPolygon();
 		VectorValue* surface=dynamic_cast<VectorValue*>(s);
 		foreach(Value* indexVal,surface->getChildren()) {
 			NumberValue* indexNum=dynamic_cast<NumberValue*>(indexVal);
-			double index = indexNum->getNumber();
-			VectorValue* point=dynamic_cast<VectorValue*>(children.at(index));
-			Point pt = point->getPoint();
-			p->appendVertex(pt);
+			if(indexNum) {
+				int index = indexNum->toInteger();
+				if(index>=0&&index<children.count()) {
+					pg->append(index);
+				}
+			}
 		}
 
 	}

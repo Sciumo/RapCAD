@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,19 +18,32 @@
 
 #include "echomodule.h"
 #include "context.h"
+#include "textvalue.h"
 
-EchoModule::EchoModule(QTextStream& s) : Module("echo"), output(s)
+EchoModule::EchoModule(Reporter* r) : Module(r,"echo"), output(r->output)
 {
 }
 
-Node* EchoModule::evaluate(Context* ctx,QList<Node*>)
+OnceOnly EchoModule::depricateWarning;
+
+Node* EchoModule::evaluate(Context* ctx)
 {
-	for(int i=0; i<ctx->arguments.size(); i++) {
-		if(i>0)
-			output << " ";
-		Value* a=ctx->arguments.at(i);
-		output << a->getValueString();
+	if(depricateWarning()) {
+		output << "Warning: 'echo' module is deprecated please use 'write' or 'writeln'\n";
 	}
+	output << "ECHO: ";
+	QList<Value*> args=ctx->getArguments();
+
+	OnceOnly first;
+	foreach(Value* a,args) {
+		if(!first())
+			output << ", ";
+		TextValue* t=dynamic_cast<TextValue*>(a);
+		if(t) output << "\"";
+		output << a->getValueString();
+		if(t) output << "\"";
+	}
+	output << "\n";
 
 	return NULL;
 }

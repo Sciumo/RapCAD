@@ -2,13 +2,13 @@
 #define OFFSETMODULE_H
 
 #include "module.h"
-#include "context.h"
 
 class OffsetModule : public Module
 {
+	Q_DECLARE_TR_FUNCTIONS(OffsetModule)
 public:
-	OffsetModule();
-	Node* evaluate(Context*,QList<Node*>);
+	OffsetModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // OFFSETMODULE_H

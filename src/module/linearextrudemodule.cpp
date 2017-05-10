@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,22 +17,25 @@
  */
 
 #include "linearextrudemodule.h"
+#include "context.h"
 #include "node/linearextrudenode.h"
 #include "numbervalue.h"
 
-LinearExtrudeModule::LinearExtrudeModule() : Module("linear_extrude")
+LinearExtrudeModule::LinearExtrudeModule(Reporter* r) : Module(r,"linear_extrude")
 {
+	addDescription(tr("Extrudes its children along the z axis."));
+	addParameter("height",tr("The height of the extrusion."));
 }
 
-Node* LinearExtrudeModule::evaluate(Context* ctx,QList<Node*> childs)
+Node* LinearExtrudeModule::evaluate(Context* ctx)
 {
-	double h=1.0;
-	NumberValue* height=dynamic_cast<NumberValue*>(ctx->getArgument(0,"height"));
+	decimal h=1.0;
+	NumberValue* height=dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
 	if(height)
 		h=height->getNumber();
 
 	LinearExtrudeNode* d = new LinearExtrudeNode();
 	d->setHeight(h);
-	d->setChildren(childs);
+	d->setChildren(ctx->getInputNodes());
 	return d;
 }

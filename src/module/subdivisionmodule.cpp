@@ -1,20 +1,23 @@
 #include "subdivisionmodule.h"
+#include "context.h"
 #include "node/subdivisionnode.h"
 #include "numbervalue.h"
 
-SubDivisionModule::SubDivisionModule() : Module("subdiv")
+SubDivisionModule::SubDivisionModule(Reporter* r) : Module(r,"subdiv")
 {
+	addDescription(tr("Not Implemented."));
+	addParameter("level",tr("Not Implemented."));
 }
 
-Node* SubDivisionModule::evaluate(Context* ctx,QList<Node*> childs)
+Node* SubDivisionModule::evaluate(Context* ctx)
 {
 	int level=0;
-	NumberValue* levelVal=dynamic_cast<NumberValue*>(ctx->getArgument(0,"level"));
+	NumberValue* levelVal=dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
 	if(levelVal)
-		level=int(levelVal->getNumber());
+		level=levelVal->toInteger();
 
 	SubDivisionNode* d = new SubDivisionNode();
-	d->setChildren(childs);
+	d->setChildren(ctx->getInputNodes());
 	d->setLevel(level);
 	return d;
 }

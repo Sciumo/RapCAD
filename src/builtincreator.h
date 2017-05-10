@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,20 +19,23 @@
 #ifndef BUILTINCREATOR_H
 #define BUILTINCREATOR_H
 
-#include <QTextStream>
+#include "reporter.h"
 #include "declaration.h"
 #include "script.h"
 
 class BuiltinCreator
 {
 public:
-	static BuiltinCreator* getInstance(QTextStream& output);
+	static BuiltinCreator* getInstance(Reporter*);
 	void initBuiltins(Script*);
 	void saveBuiltins(Script*);
+	void generateDocs();
+	void generateDocs(TreeVisitor&);
 private:
-	BuiltinCreator(QTextStream& output);
+	BuiltinCreator(Reporter*);
 	static BuiltinCreator* instance;
 	QList<Declaration*> builtins;
+	Reporter* reporter;
 };
 
 #endif // BUILTINCREATOR_H

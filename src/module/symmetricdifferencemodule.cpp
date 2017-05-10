@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,15 +17,16 @@
  */
 
 #include "symmetricdifferencemodule.h"
+#include "context.h"
 #include "node/symmetricdifferencenode.h"
 
-SymmetricDifferenceModule::SymmetricDifferenceModule() : Module("symmetric_difference")
+SymmetricDifferenceModule::SymmetricDifferenceModule(Reporter* r) : Module(r,"symmetric_difference")
 {
 }
 
-Node* SymmetricDifferenceModule::evaluate(Context*,QList<Node*> childs)
+Node* SymmetricDifferenceModule::evaluate(Context* ctx)
 {
 	SymmetricDifferenceNode* d = new SymmetricDifferenceNode();
-	d->setChildren(childs);
+	d->setChildren(ctx->getInputNodes());
 	return d;
 }

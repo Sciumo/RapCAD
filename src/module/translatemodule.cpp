@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,31 +21,32 @@
 #include "vectorvalue.h"
 #include "node/transformationnode.h"
 
-TranslateModule::TranslateModule() : Module("translate")
+TranslateModule::TranslateModule(Reporter* r) : Module(r,"translate")
 {
+	addDescription(tr("Moves its children along the given vector."));
+	addParameter("vector",tr("The vector to move along"));
 }
 
-Node* TranslateModule::evaluate(Context* ctx,QList<Node*> childs)
+Node* TranslateModule::evaluate(Context* ctx)
 {
 	Point v;
-	VectorValue* vec=dynamic_cast<VectorValue*>(ctx->getArgument(0,"vector"));
+	VectorValue* vec=dynamic_cast<VectorValue*>(getParameterArgument(ctx,0));
 	if(vec)
 		v=vec->getPoint();
 
-	double x=0,y=0,z=0;
+	decimal x=0,y=0,z=0;
 	v.getXYZ(x,y,z);
 
-	double m[16] = {
-		1,0,0,0,
-		0,1,0,0,
-		0,0,1,0,
-		x,y,z,1
-	};
+	TransformMatrix* m = new TransformMatrix(
+		1,0,0,x,
+		0,1,0,y,
+		0,0,1,z,
+		0,0,0,1
+	);
 
 	TransformationNode* n=new TransformationNode();
-	for(int i=0; i<16; i++)
-		n->matrix[i]=m[i];
+	n->setMatrix(m);
 
-	n->setChildren(childs);
+	n->setChildren(ctx->getInputNodes());
 	return n;
 }

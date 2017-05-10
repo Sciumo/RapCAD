@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,39 +16,24 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "rmath.h"
 #include "primitivemodule.h"
-#include "tau.h"
+#include "context.h"
+#include "numbervalue.h"
 
-PrimitiveModule::PrimitiveModule(const QString n) : Module(n)
+PrimitiveModule::PrimitiveModule(Reporter* r,const QString n) : Module(r,n)
 {
 }
 
-/**
-* Get the number of fragments of a circle, given radius and
-* the three special variables $fn, $fs and $fa
-*/
-int PrimitiveModule::getFragments(double r, double fn, double fs, double fa)
+QList<Point> PrimitiveModule::getCircle(decimal r, decimal f, decimal z)
 {
-	const double GRID_FINE = 0.000001;
-	if(r < GRID_FINE)
-		return 0;
-
-	if(fn > 0.0)
-		return (int)fn;
-
-	return (int)ceil(fmax(fmin(360.0 / fa, r*M_PI / fs), 5));
-}
-
-
-Polygon PrimitiveModule::getCircle(double r, double f, double z)
-{
-	Polygon circle;
+	QList<Point> circle;
 	for(int i=0; i<f; i++) {
-		double phi = (M_TAU*i) / f;
-		double x,y;
+		decimal phi = (r_tau()*i) / f;
+		decimal x,y;
 		if(r > 0) {
-			x = r*cos(phi);
-			y = r*sin(phi);
+			x = r*r_cos(phi);
+			y = r*r_sin(phi);
 		} else {
 			x=0;
 			y=0;
@@ -60,14 +45,14 @@ Polygon PrimitiveModule::getCircle(double r, double f, double z)
 	return circle;
 }
 
-Polygon PrimitiveModule::getPolygon(double a,double r, double n, double z)
+QList<Point> PrimitiveModule::getPolygon(decimal a,decimal r, decimal n, decimal z)
 {
-	Polygon poly;
+	QList<Point> poly;
 	if(n==6) {
 		//TODO modify this to cater for all even values of n
-		double x,y;
-		double s2=r*sin(M_PI/n);
-		for(int i=0; i<n; i++){
+		decimal x=0,y=0;
+		decimal s2=r*r_sin(r_pi()/n);
+		for(int i=0; i<n; i++) {
 			switch(i) {
 			case 0: {
 				y=a;

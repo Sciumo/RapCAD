@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,16 +19,20 @@
 %{
 #include "abstracttokenbuilder.h"
 #include "reporter.h"
+#include "decimal.h"
 
 void lexererror();
-void lexerinclude(const char*);
+void lexerinclude(QFileInfo);
 void lexerinit(AbstractTokenBuilder*,Reporter*,QString,bool);
+void lexerdestroy();
 void lexerbegin();
 void lexercomment();
 void lexercodedoc();
 
+static bool openfile(QFileInfo);
 static AbstractTokenBuilder* tokenizer;
 static Reporter* reporter;
+static QList<FILE*> openfiles;
 %}
 
 %option yylineno
@@ -77,8 +81,10 @@ NL \n|\r\n
 "&&"				{ return tokenizer->buildAnd(); }
 "||"				{ return tokenizer->buildOr();  }
 "++"				{ return tokenizer->buildIncrement(); }
+"+="				{ return tokenizer->buildAddAssign(); }
 "--"				{ return tokenizer->buildDecrement(); }
-"**"				{ return tokenizer->buildOuterProduct(); }
+"-="				{ return tokenizer->buildSubtractAssign(); }
+"**"				{ return tokenizer->buildCrossProduct(); }
 ".*"				{ return tokenizer->buildComponentwiseMultiply(); }
 "./"				{ return tokenizer->buildComponentwiseDivide(); }
 "::"				{ return tokenizer->buildNamespace(); }
@@ -90,6 +96,7 @@ NL \n|\r\n
 "!"				{ return tokenizer->buildNot(); }
 "*"				{ return tokenizer->buildMultiply(); }
 "/"				{ return tokenizer->buildDivide(); }
+"|"				{ return tokenizer->buildLength(); }
 "%"				{ return tokenizer->buildModulus(); }
 "~"				{ return tokenizer->buildConcatenate(); }
 "~="			{ return tokenizer->buildAppend(); }
@@ -139,14 +146,21 @@ void lexerinit(AbstractTokenBuilder* b,Reporter* r, QString input,bool file)
 
 	if(file) {
 		QFileInfo fileinfo(input);
-		char* fullpath = strdup(fileinfo.absoluteFilePath().toLocal8Bit());
-		lexerin = fopen(fullpath,"r");
-		free(fullpath);
+		openfile(fileinfo);
 		tokenizer->buildFileStart(fileinfo.absoluteDir());
 	} else {
-		const char* t = input.toLocal8Bit();
+		const char* t = input.toUtf8().constData();
 		lexer_scan_string(t);
 	}
+}
+
+void lexerdestroy()
+{
+	foreach(FILE* f, openfiles)
+		fclose(f);
+	openfiles.clear();
+
+	lexerlex_destroy();
 }
 
 void lexerbegin()
@@ -164,14 +178,22 @@ void lexercodedoc()
 	BEGIN(codedoc);
 }
 
-void lexerinclude(const char* fullpath)
+bool openfile(QFileInfo f)
 {
-	FILE* newinput=fopen(fullpath,"r");
-	if(!newinput) {
-		fprintf(stderr,"%d: Can't open input file `%s'.\n",lexerlineno,fullpath);
-		return;
+	QString fullpath=f.absoluteFilePath();
+	FILE* fd=fopen(QFile::encodeName(fullpath),"r");
+	if(!fd) {
+		if(reporter) //Reporter can be null
+			reporter->reportFileMissingError(fullpath);
+		return false;
 	}
+	openfiles.append(fd);
+	lexerin=fd;
+	return true;
+}
 
-	lexerin=newinput;
-	lexerpush_buffer_state(lexer_create_buffer(lexerin, YY_BUF_SIZE));
+void lexerinclude(QFileInfo f)
+{
+	if(openfile(f))
+		lexerpush_buffer_state(lexer_create_buffer(lexerin, YY_BUF_SIZE));
 }

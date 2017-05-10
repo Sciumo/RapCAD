@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -42,11 +42,14 @@
 #include "returnstatement.h"
 #include "ternaryexpression.h"
 #include "invocation.h"
+#include "callback.h"
 #include "moduleimport.h"
 #include "scriptimport.h"
 #include "literal.h"
 #include "variable.h"
 #include "codedoc.h"
+#include "product.h"
+#include "complexexpression.h"
 
 class TreePrinter : public TreeVisitor
 {
@@ -71,12 +74,15 @@ public:
 	void visit(ReturnStatement*);
 	void visit(TernaryExpression*);
 	void visit(Invocation*);
+	void visit(Callback*);
 	void visit(ModuleImport*);
 	void visit(ScriptImport*);
 	void visit(Literal*);
 	void visit(Variable*);
 	void visit(CodeDoc*);
 	void visit(Script*);
+	void visit(Product*);
+	void visit(ComplexExpression*);
 private:
 	void createIndent();
 	QTextStream& result;

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,73 +18,89 @@
 
 #include "prismmodule.h"
 #include "numbervalue.h"
-#include "tau.h"
+#include "rmath.h"
 
-PrismModule::PrismModule() : PrimitiveModule("prism")
+PrismModule::PrismModule(Reporter* r) : PrimitiveModule(r,"prism")
 {
+	addDescription(tr("Constructs a regular prism. It will be placed centered on the xy plane."));
+	addParameter("height",tr("The height of the prism."));
+	addParameter("sides",tr("The number of size to the prism."));
+	addParameter("apothem",tr("The radius from the center to the outer faces of the prism."));
+	addParameter("center",tr("Specifies whether to center the prism vertically along the z axis."));
 }
 
-Node* PrismModule::evaluate(Context* ctx,QList<Node*>)
+Node* PrismModule::evaluate(Context* ctx)
 {
-	NumberValue* heightVal = dynamic_cast<NumberValue*>(ctx->getArgument(0,"height"));
-	double h=1.0;
+	NumberValue* heightVal = dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
+	decimal h=1.0;
 	if(heightVal)
 		h=heightVal->getNumber();
 
-	int n=3;
-	NumberValue* sidesVal = dynamic_cast<NumberValue*>(ctx->getArgument(1,"sides"));
+	int s=3;
+	NumberValue* sidesVal = dynamic_cast<NumberValue*>(getParameterArgument(ctx,1));
 	if(sidesVal)
-		n=sidesVal->getNumber();
+		s=sidesVal->toInteger();
 
-	double r=1.0,a=1.0;
-	NumberValue* apothemVal = dynamic_cast<NumberValue*>(ctx->getArgument(2,"apothem"));
+	decimal r=1.0,a=1.0;
+	NumberValue* apothemVal = dynamic_cast<NumberValue*>(getParameterArgument(ctx,2));
 	if(apothemVal) {
 		a=apothemVal->getNumber();
-		r=a/cos(M_PI/n);
+		r=a/r_cos(r_pi()/s);
 	} else {
 		NumberValue* radiusVal = dynamic_cast<NumberValue*>(ctx->getArgument(2,"radius"));
 		if(radiusVal) {
 			r=radiusVal->getNumber();
-			a=r*cos(M_PI/n);
+			a=r*r_cos(r_pi()/s);
 		}
 	}
 
-	Value* centerVal = ctx->getArgument(3,"center");
+	Value* centerVal = getParameterArgument(ctx,3);
 	bool center=false;
 	if(centerVal)
 		center=centerVal->isTrue();
 
-	double z1,z2;
-	if(center) {
-		z1 = -h/2;
-		z2 = +h/2;
-	} else {
-		z1 = 0.0;
-		z2 = h;
-	}
+	decimal z1,z2;
+	z1 = 0.0;
+	z2 = h;
 
-	Polygon p1 = getPolygon(a,r,n,z1);
-	Polygon p2 = getPolygon(a,r,n,z2);
+	QList<Point> p1=getPolygon(a,r,s,z1);
+	QList<Point> p2=getPolygon(a,r,s,z2);
 
-	PrimitiveNode* p = new PrimitiveNode();
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
 
 	if(r > 0) {
-		for(int i=0; i<n; i++) {
-			int j=(i+1)%n;
-			p->createPolygon();
-			p->appendVertex(p1.at(i));
-			p->appendVertex(p2.at(i));
-			p->appendVertex(p2.at(j));
-			p->appendVertex(p1.at(j));
+		Polygon* pg;
+		int n=0;
+		pg=p->createPolygon();
+		foreach(Point pt,p1) {
+			p->createVertex(pt);
+			pg->append(n++);
 		}
 
-		p->createPolygon();
-		for(int i=0; i<n; i++)
-			p->appendVertex(p1.at(i));
+		pg=p->createPolygon();
+		foreach(Point pt,p2) {
+			p->createVertex(pt);
+			pg->prepend(n++);
+		}
 
-		p->createPolygon();
-		for(int i=0; i<n; i++)
-			p->prependVertex(p2.at(i));
+		for(int i=0; i<s; i++) {
+			int j=(i+1)%s;
+			int k=i+s;
+			int l=j+s;
+			pg=p->createPolygon();
+			pg->append(i);
+			pg->append(k);
+			pg->append(l);
+			pg->append(j);
+		}
+	}
+
+	if(center) {
+		AlignNode* n=new AlignNode();
+		n->setCenterVertical();
+		n->addChild(p);
+		return n;
 	}
 
 	return p;

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,15 +22,16 @@
 #include "module.h"
 #include "polygon.h"
 #include "node/primitivenode.h"
+#include "node/alignnode.h"
+#include "fragment.h"
 
 class PrimitiveModule : public Module
 {
 public:
-	PrimitiveModule(const QString);
+	PrimitiveModule(Reporter*,const QString);
 protected:
-	int getFragments(double,double,double,double);
-	Polygon getCircle(double,double,double);
-	Polygon getPolygon(double,double,double,double);
+	QList<Point> getCircle(decimal,decimal,decimal);
+	QList<Point> getPolygon(decimal,decimal,decimal,decimal);
 };
 
 #endif // PRIMITIVEMODULE_H

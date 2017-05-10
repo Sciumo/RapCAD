@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -41,12 +41,15 @@ public:
 	virtual void visit(class ReturnStatement*)=0;
 	virtual void visit(class TernaryExpression*)=0;
 	virtual void visit(class Invocation*)=0;
+	virtual void visit(class Callback*)=0;
 	virtual void visit(class ModuleImport*)=0;
 	virtual void visit(class ScriptImport*)=0;
 	virtual void visit(class Literal*)=0;
 	virtual void visit(class Variable*)=0;
 	virtual void visit(class CodeDoc*)=0;
 	virtual void visit(class Script*)=0;
+	virtual void visit(class Product*)=0;
+	virtual void visit(class ComplexExpression*)=0;
 };
 
 #endif // TREEVISITOR_H

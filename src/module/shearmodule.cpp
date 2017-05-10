@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,13 +18,18 @@
 
 #include "shearmodule.h"
 #include "vectorvalue.h"
+#include "context.h"
 #include "node/transformationnode.h"
 
-ShearModule::ShearModule() : Module("shear")
+ShearModule::ShearModule(Reporter* r) : Module(r,"shear")
 {
+	addDescription(tr("Shears its children in the given planes."));
+	addParameter("x",tr("The yz plane."));
+	addParameter("y",tr("The xz plane."));
+	addParameter("z",tr("The xy plane."));
 }
 
-Node* ShearModule::evaluate(Context* ctx,QList<Node*> childs)
+Node* ShearModule::evaluate(Context* ctx)
 {
 	Point vecSx;
 	VectorValue* xVal=dynamic_cast<VectorValue*>(ctx->getArgument(0,"x"));
@@ -41,26 +46,25 @@ Node* ShearModule::evaluate(Context* ctx,QList<Node*> childs)
 	if(zVal)
 		vecSz=zVal->getPoint();
 
-	double sxy=0,sxz=0;
+	decimal sxy=0,sxz=0;
 	vecSx.getXY(sxy,sxz);
 
-	double syx=0,syz=0;
+	decimal syx=0,syz=0;
 	vecSy.getXY(syx,syz);
 
-	double szx=0,szy=0;
+	decimal szx=0,szy=0;
 	vecSz.getXY(szx,szy);
 
-	double m[16] = {
+	TransformMatrix* m = new TransformMatrix(
 		1,sxy,sxz,0,
 		syx,1,syz,0,
 		szx,szy,1,0,
 		0,0,0,1
-	};
+	);
 
 	TransformationNode* n=new TransformationNode();
-	for(int i=0; i<16; i++)
-		n->matrix[i]=m[i];
+	n->setMatrix(m);
 
-	n->setChildren(childs);
+	n->setChildren(ctx->getInputNodes());
 	return n;
 }

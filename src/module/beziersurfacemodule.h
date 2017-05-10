@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,19 +25,20 @@
 
 class BezierSurfaceModule : public Module
 {
+	Q_DECLARE_TR_FUNCTIONS(BezierSurfaceModule)
 public:
-	BezierSurfaceModule();
-	Node* evaluate(Context*,QList<Node*>);
+	BezierSurfaceModule(Reporter*);
+	Node* evaluate(Context*);
 private:
-	typedef QList<double> Vector;
+	typedef QList<decimal> Vector;
 	typedef QList<Point> Points;
 	typedef QList<Points> Mesh;
 
-	double bez03(double);
-	double bez13(double);
-	double bez23(double);
-	double bez33(double);
-	Point pointOnBez(Points,double);
+	decimal bez03(decimal);
+	decimal bez13(decimal);
+	decimal bez23(decimal);
+	decimal bez33(decimal);
+	Point pointOnBez(Points,decimal);
 	Point pointOnBezMesh(Mesh,Vector);
 	Points getCurveQuad(Mesh,Vector,Vector);
 };

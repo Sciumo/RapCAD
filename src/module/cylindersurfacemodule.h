@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 #define CYLINDERSURFACEMODULE_H
 
 #include "primitivemodule.h"
-#include "context.h"
 
 class CylinderSurfaceModule :  public PrimitiveModule
 {
+	Q_DECLARE_TR_FUNCTIONS(CylinderSurfaceModule)
 public:
-	CylinderSurfaceModule();
-	Node* evaluate(Context*,QList<Node*>);
+	CylinderSurfaceModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // CYLINDERSURFACEMODULE_H

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ ImportModule::ImportModule()
 {
 }
 
-Node* ImportModule::evaluate(Context*,QList<Node*>)
+Node* ImportModule::evaluate(Context*)
 {
 	//TODO instance specific args
 	return new ImportNode(import);

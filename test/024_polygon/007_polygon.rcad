@@ -1,0 +1,12 @@
+function star(start,end,a,r1,r2) {
+  v=[];
+  for(i=[start:a:end]) {
+    r=i%4?r1:r2;
+    x=r*sin(i);
+    y=r*cos(i);
+    v~=[[x,y]];
+  }
+  return v;
+}
+
+polygon(star(0,360,10,5,2));

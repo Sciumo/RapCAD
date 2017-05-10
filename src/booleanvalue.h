@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ class BooleanValue : public Value
 public:
 	BooleanValue(bool);
 	QString getValueString() const;
+	Value* toNumber();
 	bool isTrue() const;
 private:
 	Value* operation(Expression::Operator_e);

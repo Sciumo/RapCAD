@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,7 +17,16 @@
  */
 
 #include "groupmodule.h"
+#include "context.h"
+#include "node/groupnode.h"
 
-GroupModule::GroupModule() : UnionModule("group")
+GroupModule::GroupModule(Reporter* r) : Module(r,"group")
 {
+}
+
+Node *GroupModule::evaluate(Context* ctx)
+{
+	GroupNode* d = new GroupNode();
+	d->setChildren(ctx->getInputNodes());
+	return d;
 }

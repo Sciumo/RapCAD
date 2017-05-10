@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,71 +16,134 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QTextStream>
-#include "mainwindow.h"
-#include "worker.h"
-#include "getopt.h"
+#include "ui/mainwindow.h"
 #include "preferences.h"
+#include "worker.h"
+#include "tester.h"
+#include "comparer.h"
+#include "stringify.h"
+#include "interactive.h"
+#include "generator.h"
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-static void version(QTextStream& output)
-{
-	output << "RapCAD version: " << TOSTRING(RAPCAD_VERSION) << "\n";
-	output.flush();
-	exit(1);
-}
+#if USE_COMMANDLINE_PARSER
+#include "contrib/qcommandlineparser.h"
+#else
+#include "qcommandlineparser.h"
+#endif
 
-static int showUi(int argc, char* argv[],QString filename)
+static void setupApplication()
 {
+#ifdef Q_OS_WIN
+	QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+#endif
 	QCoreApplication::setOrganizationName("rapcad");
 	QCoreApplication::setOrganizationDomain("rapcad.org");
 	QCoreApplication::setApplicationName("RapCAD");
-	QCoreApplication::setApplicationVersion(TOSTRING(RAPCAD_VERSION));
+	QCoreApplication::setApplicationVersion(STRINGIFY(RAPCAD_VERSION));
+}
 
-	QApplication a(argc, argv);
+static void showVersion(QTextStream& out)
+{
+	out << QCoreApplication::applicationName() << " " << QCoreApplication::applicationVersion() << endl;
+}
+
+static int showUi(int argc, char* argv[],QStringList filenames)
+{
+	QApplication a(argc,argv);
 	MainWindow w;
-
-	if(!filename.isEmpty())
-		w.load(filename);
-
+	w.loadFiles(filenames);
 	w.show();
+	return a.exec();
+}
 
-	int retcode=a.exec();
-	Preferences::syncDelete();
-	return retcode;
+static Strategy* parseArguments(int argc,char* argv[],QStringList& inputFiles,QTextStream& output)
+{
+	QCoreApplication a(argc,argv);
+
+	QCommandLineParser p;
+	p.setApplicationDescription(QCoreApplication::translate("main","RapCAD the rapid prototyping IDE"));
+	p.addHelpOption();
+	p.addVersionOption();
+	p.addPositionalArgument("filename", QCoreApplication::translate("main","File to open or process."));
+
+	QCommandLineOption testOption(QStringList() << "t" << "test", QCoreApplication::translate("main","Run through tests in working directory."));
+	p.addOption(testOption);
+
+	QCommandLineOption compareOption(QStringList() << "c" << "compare", QCoreApplication::translate("main","Compare two files to see if they are identical."),"filename");
+	p.addOption(compareOption);
+
+	QCommandLineOption printOption(QStringList() << "p" << "print", QCoreApplication::translate("main","Print debugging output."));
+	p.addOption(printOption);
+
+	QCommandLineOption generateOption(QStringList() << "g" << "generate", QCoreApplication::translate("main","Generate documentation"));
+	p.addOption(generateOption);
+
+	QCommandLineOption outputOption(QStringList() << "o" << "output",QCoreApplication::translate("main","Create output file <filename>."),"filename");
+	p.addOption(outputOption);
+
+#ifdef USE_READLINE
+	QCommandLineOption interactOption(QStringList() << "i" << "interactive",QCoreApplication::translate("main","Start an interactive session"));
+	p.addOption(interactOption);
+#endif
+	p.process(a);
+
+	inputFiles=p.positionalArguments();
+	QString inputFile;
+	if(!inputFiles.isEmpty())
+		inputFile=inputFiles.at(0);
+
+	QString outputFile;
+	if(p.isSet(outputOption))
+		outputFile=p.value(outputOption);
+	else if(p.isSet(compareOption))
+		outputFile=p.value(compareOption);
+
+	if(p.isSet(compareOption)) {
+		Comparer* c=new Comparer(output);
+		c->setup(inputFile,outputFile);
+		return c;
+	} else if(p.isSet(testOption)) {
+		showVersion(output);
+		return new Tester(output);
+	} else if(p.isSet(outputOption)||p.isSet(printOption)) {
+		Worker* w=new Worker(output);
+		bool print = p.isSet(printOption);
+		w->setup(inputFile,outputFile,print,false);
+		return w;
+	} else if(p.isSet(generateOption)) {
+		return new Generator(output);
+#ifdef USE_READLINE
+	} else if(p.isSet(interactOption)) {
+		showVersion(output);
+		return new Interactive(output);
+#endif
+	}
+	return NULL;
 }
 
 int main(int argc, char* argv[])
 {
-	int opt;
-	QString filename;
-	bool print=false;
-	bool useGUI=true;
-	QTextStream out(stdout);
+	setupApplication();
 
-	while((opt = getopt(argc, argv, "f:p::v")) != -1) {
-		switch(opt) {
-		case 'f':
-			useGUI=false;
-			filename=QString(optarg);
-			break;
-		case 'p':
-			print=true;
-			break;
-		case 'v':
-			version(out);
-			break;
-		}
-	}
+	//Ensure preferences have been initialised early.
+	Preferences::getInstance();
 
-	if(!useGUI) {
-		Worker b(out);
-		b.evaluate(filename,print);
-		return 0;
-	} else {
-		filename=QString(argv[optind]);
-		return showUi(argc,argv,filename);
-	}
+	QStringList inputFiles;
+	QTextStream output(stdout);
+	Strategy* s=parseArguments(argc,argv,inputFiles,output);
+
+	int retcode;
+	if(s)
+		retcode=s->evaluate();
+	else
+		retcode=showUi(argc,argv,inputFiles);
+
+	delete s;
+
+	//Ensure preferences are saved.
+	Preferences::syncDelete();
+
+	return retcode;
 }

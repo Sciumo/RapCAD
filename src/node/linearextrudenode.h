@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ class LinearExtrudeNode : public Node
 {
 public:
 	LinearExtrudeNode();
-	void setHeight(double);
-	double getHeight() const;
+	void setHeight(decimal);
+	decimal getHeight() const;
 	void accept(NodeVisitor&);
 private:
-	double height;
+	decimal height;
 };
 
 #endif // LINEAREXTRUDENODE_H

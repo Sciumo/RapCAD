@@ -1,0 +1,4 @@
+function test() {
+a=tan(90);
+return a>10000000000000000;
+}

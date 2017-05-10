@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@
 #include "vectorvalue.h"
 #include "booleanvalue.h"
 
-NumberValue::NumberValue(double value)
+NumberValue::NumberValue(decimal value)
 {
 	this->number=value;
 }
 
 QString NumberValue::getValueString() const
 {
-	return QString().setNum(this->number,'g',16);
+	return to_string(number);
 }
 
 bool NumberValue::isTrue() const
@@ -35,14 +35,24 @@ bool NumberValue::isTrue() const
 	return this->number!=0;
 }
 
-double NumberValue::getNumber() const
+decimal NumberValue::getNumber() const
 {
 	return this->number;
 }
 
+Value* NumberValue::toNumber()
+{
+	return this;
+}
+
+int NumberValue::toInteger() const
+{
+	return to_integer(this->number);
+}
+
 Value* NumberValue::operation(Expression::Operator_e e)
 {
-	double result = basicOperation<double,double>(this->number,e);
+	decimal result=basicOperation(this->number,e);
 	return new NumberValue(result);
 }
 
@@ -51,12 +61,14 @@ Value* NumberValue::operation(Value& v, Expression::Operator_e e)
 	NumberValue* num = dynamic_cast<NumberValue*>(&v);
 	if(num) {
 		if(isComparison(e)) {
-			bool result=basicOperation<bool,double>(this->number,e,num->number);
+			bool result=to_boolean(basicOperation(this->number,e,num->number));
 			return new BooleanValue(result);
-		} else {
-			double result=basicOperation<double,double>(this->number,e,num->number);
-			return new NumberValue(result);
 		}
+		if(e==Expression::Divide&&num->number==decimal(0))
+			return Value::undefined();
+
+		decimal result=basicOperation(this->number,e,num->number);
+		return new NumberValue(result);
 	}
 	VectorValue* vec = dynamic_cast<VectorValue*>(&v);
 	if(vec) {
@@ -64,12 +76,17 @@ Value* NumberValue::operation(Value& v, Expression::Operator_e e)
 			QList<Value*> r=vec->getChildren();
 			r.prepend(this);
 			return new VectorValue(r);
+		} else if(e==Expression::Exponent) {
+			QList<Value*> result;
+			foreach(Value* c,vec->getChildren())
+				result.append(Value::operation(this,e,c));
+			return new VectorValue(result);
 		} else {
-			//operations between scalars and vectors are commutative e.g.
-			// [1,2,3]-1  is the same as 1 - [1,2,3]
+			// most operations between scalars and vectors are commutative e.g.
+			// [1,2,3]-1  is the same as 1-[1,2,3]
 			return Value::operation(vec,e,this);
 		}
 	}
 
-	return this;
+	return Value::operation(v,e);
 }

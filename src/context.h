@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,47 +22,71 @@
 #include <QHash>
 #include <QTextStream>
 #include "value.h"
-#include "module.h"
-#include "function.h"
+#include "node.h"
 #include "scope.h"
+#include "layout.h"
 
 class Context
 {
+	Q_DECLARE_TR_FUNCTIONS(Context)
 public:
-	Context(QTextStream& s);
+	Context();
+	virtual ~Context();
 
-	Context* parent;
-	QList<Value*> arguments;
-	QList<Value*> parameters;
-	Value* currentValue;
-	Value* returnValue;
-	Scope* currentScope;
-	QString currentName;
-	QList<Node*> currentNodes;
-	QList<Node*> inputNodes;
+	void setParent(Context*);
 
-	Value* lookupVariable(QString,Variable::Type_e&);
+	void setCurrentScope(Scope*);
+	Scope* getCurrentScope();
+
+	void setReturnValue(Value*);
+	Value* getReturnValue();
+
+	Value* getCurrentValue();
+	void setCurrentValue(Value*);
+
+	QString getCurrentName();
+	void setCurrentName(QString);
+
+	Value* lookupVariable(QString,Variable::Storage_e&,Layout*);
 	bool addVariable(Value*);
 	void setVariable(Value*);
 
-	Module* lookupModule(QString);
-	void addModule(Module* mod);
+	Node* lookupChild(int);
+	QList<Node*> lookupChildren();
 
-	Function* lookupFunction(QString);
-	void addFunction(Function*);
+	void setVariablesFromArguments();
+	QList<Value*> getArguments();
+	void addArgument(Value*);
+	void clearArguments();
 
-	void setArguments(QList<Value*>,QList<Value*>);
 	Value* getArgument(int,QString);
-	Value* getArgument(int,QString,bool);
-	Value* getArgumentDeprecated(int,QString,QString);
+	Value* getArgumentSpecial(QString);
+	Value* getArgumentDeprecated(int,QString,QString,Reporter*);
+	Value* getArgumentDeprecatedModule(int,QString,QString,Reporter*);
+
+	void clearParameters();
+	void addParameter(Value*);
+
+	void setInputNodes(QList<Node*>);
+	QList<Node*> getInputNodes();
+
+	void setCurrentNodes(QList<Node*>);
+	QList<Node*> getCurrentNodes();
+	void addCurrentNode(Node*);
 private:
-	Value* matchArgument(bool,bool,int,QString);
+	Context* parent;
+	QList<Value*> arguments;
+	QList<Value*> parameters;
+	QList<Node*> currentNodes;
+	QList<Node*> inputNodes;
+	Value* currentValue;
+	Value* returnValue;
+	QString currentName;
+	Scope* currentScope;
+	Value* matchArgumentIndex(bool,bool,int,QString);
+	Value* matchArgument(bool,bool,QString);
 	bool match(bool,bool,QString,QString);
-	bool contains(QList<Value*>,QString);
 	QHash<QString,Value*> variables;
-	QHash<QString,Module*> modules;
-	QHash<QString,Function*> functions;
-	QTextStream& output;
 };
 
 #endif // CONTEXT_H

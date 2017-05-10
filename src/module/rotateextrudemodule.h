@@ -1,12 +1,14 @@
 #ifndef ROTATEEXTRUDEMODULE_H
 #define ROTATEEXTRUDEMODULE_H
 
-#include "module.h"
+#include "primitivemodule.h"
 
-class RotateExtrudeModule : public Module
+class RotateExtrudeModule : public PrimitiveModule
 {
+	Q_DECLARE_TR_FUNCTIONS(RotateExtrudeModule)
 public:
-	RotateExtrudeModule();
+	RotateExtrudeModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // ROTATEEXTRUDEMODULE_H

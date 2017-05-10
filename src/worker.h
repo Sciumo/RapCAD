@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,27 +21,47 @@
 
 #include <QObject>
 #include <QTextStream>
-#include "cgalprimitive.h"
+#include "strategy.h"
+#include "primitive.h"
+#include "renderer.h"
 #include "reporter.h"
+#include "script.h"
+#include "callback.h"
+#include "instance.h"
+#include "renderer.h"
 
-class Worker : public QObject
+class Worker : public Strategy
 {
-	Q_OBJECT
+	Q_DECLARE_TR_FUNCTIONS(Worker)
 public:
-	Worker(QTextStream&,QObject* parent = 0);
-	virtual void evaluate(QString path, bool print);
+	Worker(QTextStream&);
 	virtual ~Worker();
-signals:
-	void done(CGALPrimitive*);
-protected slots:
-	void doWork();
+	void setup(QString,QString,bool,bool);
+	virtual int evaluate();
+	void exportResult(QString);
+	bool resultAvailable();
+	void resultAccepted();
+	Renderer* getRenderer();
 protected:
-	virtual void finish();
-	QString path;
+	void internal();
+	virtual void update() {}
+	virtual void finish() {}
+	Instance* addProductInstance(QString,Script*);
+
+	QString inputFile;
+	QString outputFile;
 	bool print;
+	bool generate;
 private:
-	QTextStream& output;
-	Reporter* reporter;
+	QList<Argument*> getArgs(decimal);
+	void primary();
+	void generation();
+	decimal getBoundsHeight();
+	void resultFailed(QString);
+	void updatePrimitive(Primitive*);
+
+	Primitive* primitive;
+	Primitive* previous;
 };
 
 #endif // WORKER_H

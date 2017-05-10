@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 #define TREEEVALUATOR_H
 
 #include <QStack>
-#include <QTextStream>
 #include "treevisitor.h"
 #include "script.h"
 #include "module.h"
@@ -41,17 +40,22 @@
 #include "returnstatement.h"
 #include "ternaryexpression.h"
 #include "invocation.h"
+#include "callback.h"
 #include "moduleimport.h"
 #include "scriptimport.h"
 #include "literal.h"
 #include "variable.h"
 #include "context.h"
+#include "layout.h"
 #include "value.h"
+#include "product.h"
+#include "complexexpression.h"
 
 class TreeEvaluator : public TreeVisitor
 {
+	Q_DECLARE_TR_FUNCTIONS(TreeEvaluator)
 public:
-	TreeEvaluator(QTextStream&);
+	TreeEvaluator(Reporter*);
 	~TreeEvaluator();
 	void visit(Module*);
 	void visit(ModuleScope*);
@@ -71,23 +75,36 @@ public:
 	void visit(ReturnStatement*);
 	void visit(TernaryExpression*);
 	void visit(Invocation*);
+	void visit(Callback*);
 	void visit(ModuleImport*);
 	void visit(ScriptImport*);
 	void visit(Literal*);
 	void visit(Variable*);
 	void visit(CodeDoc*);
 	void visit(Script*);
+	void visit(Product*);
+	void visit(ComplexExpression*);
 
 	Node* getRootNode() const;
+
 private:
 	void startContext(Scope*);
 	void finishContext();
 	Node* createUnion(QList<Node*>);
+	void descend(Scope*);
+	void startLayout(Scope*);
+	void finishLayout();
 
+	Reporter* reporter;
 	Context* context;
+	Layout* layout;
 	QStack<Context*> contextStack;
+	QStack<Layout*> layoutStack;
+	QHash<Scope*,Layout*> scopeLookup;
+	bool descendDone;
 	Node* rootNode;
-	QTextStream& output;
+	QList<Script*> imports;
+	QStack<QFileInfo*> importLocations;
 };
 
 #endif // TREEEVALUATOR_H

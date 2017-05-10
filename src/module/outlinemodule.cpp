@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,15 +17,16 @@
  */
 
 #include "outlinemodule.h"
+#include "context.h"
 #include "node/outlinenode.h"
 
-OutlineModule::OutlineModule() : Module("outline")
+OutlineModule::OutlineModule(Reporter* r) : Module(r,"outline")
 {
 }
 
-Node* OutlineModule::evaluate(Context*,QList<Node*> childs)
+Node* OutlineModule::evaluate(Context* ctx)
 {
 	OutlineNode* n = new OutlineNode();
-	n->setChildren(childs);
+	n->setChildren(ctx->getInputNodes());
 	return n;
 }

@@ -1,0 +1,31 @@
+sudo: false
+language: cpp
+compiler:
+  - gcc
+addons:
+  apt:
+    packages:
+      - qt5-default
+      - qtbase5-dev
+      - libqt5opengl5-dev
+      - libboost-dev
+      - libcgal-dev
+      - bison
+      - flex
+      - libreadline-dev
+    sources:
+      - ubuntu-sdk-team
+script:
+  - qmake -v
+  - qmake -qt5
+  - make -j4
+  - pushd test
+  - ../rapcad -t
+notifications:
+  irc:
+    channels:
+      - "irc.freenode.org#rapcad"
+    skip_join: true
+    template:
+      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+      - "Build details : %{build_url}"

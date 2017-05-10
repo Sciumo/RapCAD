@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,6 +20,17 @@
 
 Node::Node()
 {
+}
+
+Node::~Node()
+{
+	foreach(Node* n, children)
+		delete n;
+}
+
+void Node::addChild(Node* n)
+{
+	children.append(n);
 }
 
 void Node::setChildren(QList<Node*> c)

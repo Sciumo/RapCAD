@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 
 #include "treeprinter.h"
+#include "onceonly.h"
 
 TreePrinter::TreePrinter(QTextStream& s) : result(s)
 {
@@ -71,11 +72,11 @@ void TreePrinter::visit(Instance* inst)
 	result << inst->getName();
 	result << "(";
 	QList<Argument*> arguments = inst->getArguments();
-	int s = arguments.size();
-	for(int i=0; i<s; i++) {
-		arguments.at(i)->accept(*this);
-		if(i+1<s)
+	OnceOnly first;
+	foreach(Argument* a, arguments) {
+		if(!first())
 			result << ",";
+		a->accept(*this);
 	}
 	result << ")";
 
@@ -96,28 +97,43 @@ void TreePrinter::visit(Instance* inst)
 			createIndent();
 			result << "}";
 		}
-	} else
+	} else {
 		result << ";";
+	}
 
 	result << "\n";
 }
 
 void TreePrinter::visit(Module* mod)
 {
+	QList<Parameter*> parameters = mod->getParameters();
+	QString desc=mod->getDescription();
+	if(!desc.isEmpty()) {
+		result << "/** " << desc << "\n";
+		foreach(Parameter* p,parameters) {
+			result << " * @param " << p->getName() << " " << p->getDescription() << "\n";
+		}
+		result << " */\n";
+	}
 	result << "module ";
 	result << mod->getName();
+	if(mod->getAuxilary())
+		result << "$";
 	result << "(";
-	QList<Parameter*> parameters = mod->getParameters();
-	int s = parameters.size();
-	for(int i=0; i<s; i++) {
-		parameters.at(i)->accept(*this);
-		if(i+1<s)
+	OnceOnly first;
+	foreach(Parameter* p,parameters) {
+		if(!first())
 			result << ",";
+		p->accept(*this);
 	}
-	result << "){\n";
-	mod->getScope()->accept(*this);
-	createIndent();
-	result << "}\n";
+	result << "){";
+	Scope* scp=mod->getScope();
+	if(scp) {
+		result << "\n";
+		scp->accept(*this);
+		createIndent();
+	}
+	result << "}\n\n";
 }
 
 void TreePrinter::visit(Function* func)
@@ -126,15 +142,17 @@ void TreePrinter::visit(Function* func)
 	result << func->getName();
 	result << "(";
 	QList<Parameter*> parameters = func->getParameters();
-	int s = parameters.size();
-	for(int i=0; i<s; i++) {
-		parameters.at(i)->accept(*this);
-		if(i+1<s)
+	OnceOnly first;
+	foreach(Parameter* p,parameters) {
+		if(!first())
 			result << ",";
+		p->accept(*this);
 	}
 
 	result << ")";
-	func->getScope()->accept(*this);
+	Scope* scp=func->getScope();
+	if(scp)
+		scp->accept(*this);
 	result << "\n";
 }
 
@@ -153,16 +171,16 @@ void TreePrinter::visit(FunctionScope* scp)
 	if(s>0) {
 		result << "{\n";
 		++indent;
-		for(int i=0; i<s; i++) {
+		foreach(Statement* s, statements) {
 			createIndent();
-			statements.at(i)->accept(*this);
+			s->accept(*this);
 		}
 		--indent;
 		createIndent();
 		result << "}";
-	} else
+	} else {
 		result << ";";
-
+	}
 	result << "\n";
 }
 
@@ -281,11 +299,11 @@ void TreePrinter::visit(VectorExpression* exp)
 {
 	result << "[";
 	QList<Expression*> children = exp->getChildren();
-	int s = children.size();
-	for(int i=0; i<s; i++) {
-		children.at(i)->accept(*this);
-		if(i+1<s)
+	OnceOnly first;
+	foreach(Expression* e,children) {
+		if(!first())
 			result << ",";
+		e->accept(*this);
 	}
 	result << "]";
 }
@@ -345,13 +363,17 @@ void TreePrinter::visit(Invocation* stmt)
 	result << stmt->getName();
 	result << "(";
 	QList<Argument*> arguments = stmt->getArguments();
-	int s = arguments.size();
-	for(int i=0; i<s; i++) {
-		arguments.at(i)->accept(*this);
-		if(i+1<s)
+	OnceOnly first;
+	foreach(Argument* a,arguments) {
+		if(!first())
 			result << ",";
+		a->accept(*this);
 	}
 	result << ")";
+}
+
+void TreePrinter::visit(Callback*)
+{
 }
 
 void TreePrinter::visit(ModuleImport* decl)
@@ -368,10 +390,11 @@ void TreePrinter::visit(ModuleImport* decl)
 	int s = parameters.size();
 	if(s>0) {
 		result << "(";
-		for(int i=0; i<s; i++) {
-			parameters.at(i)->accept(*this);
-			if(i+1<s)
+		OnceOnly first;
+		foreach(Parameter* p,parameters) {
+			if(!first())
 				result << ",";
+			p->accept(*this);
 		}
 
 		result << ")";
@@ -400,7 +423,7 @@ void TreePrinter::visit(Literal* lit)
 
 void TreePrinter::visit(Variable* var)
 {
-	switch(var->getType()) {
+	switch(var->getStorage()) {
 	case Variable::Const:
 		result << "const ";
 		break;
@@ -411,7 +434,7 @@ void TreePrinter::visit(Variable* var)
 		break;
 	}
 
-	if(var->getType()==Variable::Special)
+	if(var->getStorage()==Variable::Special)
 		result << "$";
 	result << var->getName();
 }
@@ -434,4 +457,12 @@ void TreePrinter::visit(Script* sc)
 
 		result << "*/\n";
 	}
+}
+
+void TreePrinter::visit(Product*)
+{
+}
+
+void TreePrinter::visit(ComplexExpression*)
+{
 }

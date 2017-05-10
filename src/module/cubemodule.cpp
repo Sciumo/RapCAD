@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,80 +17,133 @@
  */
 
 #include "cubemodule.h"
-#include "node/primitivenode.h"
 #include "context.h"
 #include "vectorvalue.h"
+#include "node/primitivenode.h"
 
-CubeModule::CubeModule() : PrimitiveModule("cube")
+CubeModule::CubeModule(Reporter* r) : PrimitiveModule(r,"cube")
 {
+	addDescription(tr("Constructs a cube or cuboid. It will be placed in the first octant unless the center parameter is true."));
+	addParameter("size",tr("The size of the cube. A single value or x,y,z"));
+	addParameter("center",tr("Specifies whether to center the cube at the origin"));
 }
 
-Node* CubeModule::evaluate(Context* ctx,QList<Node*>)
+Node* CubeModule::evaluate(Context* ctx)
 {
-	Value* sizeVal=ctx->getArgument(0,"size");
-	Value* centerVal=ctx->getArgument(1,"center");
-	double center=false;
+	Value* sizeVal=getParameterArgument(ctx,0);
+	Value* centerVal=getParameterArgument(ctx,1);
+	bool center=false;
 	if(centerVal)
 		center = centerVal->isTrue();
 
-	double x=1.0,y=1.0,z=1.0;
+	decimal x=1.0,y=1.0,z=1.0;
 	if(sizeVal) {
 		VectorValue* size=sizeVal->toVector(3);
 		Point p = size->getPoint();
 		p.getXYZ(x,y,z);
 	}
 
-	PrimitiveNode* p=new PrimitiveNode();
-	double x1, x2, y1, y2, z1, z2;
-	if(center) {
-		x1 = -x/2;
-		x2 = +x/2;
-		y1 = -y/2;
-		y2 = +y/2;
-		z1 = -z/2;
-		z2 = +z/2;
-	} else {
-		x1 = y1 = z1 = 0;
-		x2 = x;
-		y2 = y;
-		z2 = z;
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	decimal x1, x2, y1, y2, z1, z2;
+	x1 = y1 = z1 = 0;
+	x2 = x;
+	y2 = y;
+	z2 = z;
+
+	if(x==0.0) {
+		p->createVertex(x1,y2,z1); //0
+		p->createVertex(x1,y1,z1); //1
+		p->createVertex(x1,y1,z2); //2
+		p->createVertex(x1,y2,z2); //3
+		Polygon* pg=p->createPolygon();
+		pg->append(0);
+		pg->append(1);
+		pg->append(2);
+		pg->append(3);
+		return p;
 	}
 
-	p->createPolygon(); // top
-	p->appendVertex(x1, y1, z2);
-	p->appendVertex(x2, y1, z2);
-	p->appendVertex(x2, y2, z2);
-	p->appendVertex(x1, y2, z2);
+	if(y==0.0) {
+		p->createVertex(x1,y1,z1); //0
+		p->createVertex(x2,y1,z1); //1
+		p->createVertex(x2,y1,z2); //2
+		p->createVertex(x1,y1,z2); //3
+		Polygon* pg=p->createPolygon();
+		pg->append(0);
+		pg->append(1);
+		pg->append(2);
+		pg->append(3);
+		return p;
+	}
 
-	p->createPolygon(); // side1
-	p->appendVertex(x1, y1, z1);
-	p->appendVertex(x2, y1, z1);
-	p->appendVertex(x2, y1, z2);
-	p->appendVertex(x1, y1, z2);
+	if(z==0.0) {
+		p->createVertex(x1,y2,z1); //0
+		p->createVertex(x2,y2,z1); //1
+		p->createVertex(x2,y1,z1); //2
+		p->createVertex(x1,y1,z1); //3
+		Polygon* pg=p->createPolygon();
+		pg->append(0);
+		pg->append(1);
+		pg->append(2);
+		pg->append(3);
+		return p;
+	}
 
-	p->createPolygon(); // side2
-	p->appendVertex(x2, y1, z1);
-	p->appendVertex(x2, y2, z1);
-	p->appendVertex(x2, y2, z2);
-	p->appendVertex(x2, y1, z2);
+	p->createVertex(x1,y1,z2); //0
+	p->createVertex(x2,y1,z2); //1
+	p->createVertex(x2,y2,z2); //2
+	p->createVertex(x1,y2,z2); //3
+	p->createVertex(x1,y1,z1); //4
+	p->createVertex(x2,y1,z1); //5
+	p->createVertex(x2,y2,z1); //6
+	p->createVertex(x1,y2,z1); //7
 
-	p->createPolygon(); // side3
-	p->appendVertex(x2, y2, z1);
-	p->appendVertex(x1, y2, z1);
-	p->appendVertex(x1, y2, z2);
-	p->appendVertex(x2, y2, z2);
+	//Top
+	Polygon* pg=p->createPolygon();
+	pg->append(0);
+	pg->append(1);
+	pg->append(2);
+	pg->append(3);
 
-	p->createPolygon(); // side4
-	p->appendVertex(x1, y2, z1);
-	p->appendVertex(x1, y1, z1);
-	p->appendVertex(x1, y1, z2);
-	p->appendVertex(x1, y2, z2);
+	pg=p->createPolygon();
+	pg->append(4);
+	pg->append(5);
+	pg->append(1);
+	pg->append(0);
 
-	p->createPolygon(); // bottom
-	p->appendVertex(x1, y2, z1);
-	p->appendVertex(x2, y2, z1);
-	p->appendVertex(x2, y1, z1);
-	p->appendVertex(x1, y1, z1);
+	pg=p->createPolygon();
+	pg->append(5);
+	pg->append(6);
+	pg->append(2);
+	pg->append(1);
+
+	pg=p->createPolygon();
+	pg->append(6);
+	pg->append(7);
+	pg->append(3);
+	pg->append(2);
+
+	pg=p->createPolygon();
+	pg->append(7);
+	pg->append(4);
+	pg->append(0);
+	pg->append(3);
+
+	//Bottom
+	pg=p->createPolygon();
+	pg->append(7);
+	pg->append(6);
+	pg->append(5);
+	pg->append(4);
+
+	if(center) {
+		AlignNode* n=new AlignNode();
+		n->setCenter(true);
+		n->addChild(p);
+		return n;
+	}
 
 	return p;
 

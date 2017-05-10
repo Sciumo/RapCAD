@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,8 +24,8 @@
 class BoundsModule : public Module
 {
 public:
-	BoundsModule();
-	Node* evaluate(Context*,QList<Node*>);
+	BoundsModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // BOUNDSMODULE_H

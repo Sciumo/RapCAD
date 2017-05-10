@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ Instance::Instance()
 
 Instance::~Instance()
 {
-	for(int i=0; i<arguments.size(); i++)
-		delete arguments.at(i);
+	foreach(Argument* a,arguments)
+		delete a;
 
-	for(int i=0; i<children.size(); i++)
-		delete children.at(i);
+	foreach(Statement* s,children)
+		delete s;
 }
 
 void Instance::setName(QString name)

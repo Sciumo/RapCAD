@@ -1,0 +1,277 @@
+0.9.9
+   * Support compilation with new QT versions
+   * Added documentation generator and updated docs.
+   * Output module description in show builtins.
+   * Embed documentation in all builtin modules that have parameters.
+   * Remove center parameter from sphere.
+   * Added is_mat4x4 function.
+   * Added indexes to children module.
+   * Save line some numbers into syntax tree, which will be used in future.
+   * Allow iteration over text values with for.
+   * Implemented chr function.
+   * Implemented type test functions.
+   * Restore logical and/or operations.
+   * Improve tests for Logical operators.
+   * Added tests for chain_hull() module.
+   * Better memory handling and exception handling.
+   * Add some additional memory cleanup.
+   * Implemented chain_hull() module.
+   * Fix to offset module and added two simple tests.
+   * Fix to tests for range length.
+   * Fix to len() function for range.
+
+0.9.8
+   * Support for 3mf file format in export.
+   * Choose a sensible location when exporting files.
+   * Fix zero-length edges and zero-area triangles in input STL or polyhedron.
+   * Added $fe variable which calculates fragments based on tolerance.
+   * Correct parameter name for polyhedron "surfaces" -> "faces".
+   * Basic implementation of mesh simplification.
+   * Added more tests for polygon and fix for empty polygon.
+   * Implemented normal$() module to show orthogonals to facets.
+   * Better detection of binary STL.
+   * Basic implementation of children() module.
+   * Let the align function can take a vector.
+   * Allow norm function to be applied to numbers and complex values.
+   * Fix inverse trig functions.
+   * Ang function can now return the axis and angle between two vectors.
+   * Implemented cross function and operator.
+   * Result of undefined binary operation should be undef.
+   * Allow relative positioning by letting primitives have children.
+   * Fix GL viewer, calculate normals with double.
+   * Allow concatentation with undef to yield a result.
+     e.g. a=[]; no longer needed before to make a~=[1,2,3]; work.
+   * Implemented export to nef.
+   * Basic caching of primitives.
+   * Hook the view menu actions up to appropriate views.
+   * Fix weird crash on shutdown.
+
+0.9.7
+   * Use arbitary precision arithmetic for all calculations.
+   * Prevent toolbar being hidden show actions menu on right click.
+   * Greyscale the rendering window while compilation is taking place.
+   * Use new QOpenGLWidget when Qt5.4 or above is available.
+   * Added discrete module for quantising vertices to the nearest n decimal places.
+   * Added a simple renderer, to render wireframes without cgal.
+   * Experimental multi material support.
+   * Provide backwards compatibility in rotate extrude.
+   * Rotate module now accepts unit quaternion (versor).
+   * Implemented quaternions, multiplication, and ang() function.
+   * Allow nesting of auxilirary modules, and display nested to be displayed.
+   * Implemented exponent operator for vectors.
+   * Implemented length (magnitude) operator.
+   * Implemented vector multiplication and norm() function.
+   * Ranges now support basic interval arithmetic.
+   * Update to Qt5.5.1 on windows build.
+   * Allow diameter parameter on circle.
+   * Removed extraneous new lines in console output.
+   * Added places parameter to round function.
+   * Added a triangulate module.
+   * Fixed a crash in linear_extrude when there are no perimeters.
+   * Preferences default to "Safety orange" theme.
+   * Ensure only modified files are saved and allow do not save for new tabs when closed.
+   * Updated windows build environment.
+
+0.9.6
+   * All trig functions now take value in degrees.
+   * Ensure cone, prism, cylinder etc use exact centering along vertical axis.
+   * Add option to use rounding within trig, and other functions.
+   * Make output precision configurable in preferences.
+   * Higher output precision in AMF format.
+   * Fix to rotate_extrude bug where r=0.
+   * Added test for bezier surface, solid linear extrude, and slice.
+   * All primitives are now constructed as a list of points and indices to those points.
+   * Corrections to docs where bounds() should be bound$().
+   * Use exact centering for sphere and default to point when no radius given.
+   * Improve compilation time output in gui.
+   * Fix crash when version() is called more than once.
+   * Added feature matrix to docs.
+   * Functions min() and max() now work for any number of arguments.
+   * Added some i18n support code.
+
+0.9.5
+   * Implemented importing scripts with the 'use' directive.
+   * Fix some hard crashes in Polygon, Polyhedron and Polyline modules.
+   * Fixed a bug so that the result of the expression !undef now yeilds true.
+   * Implemented a num() function for converting values to number.
+   * Interactive mode can now handle statements as well as expressions.
+   * Implemented a volume$ module for calculating required print material, and optionally center of mass.
+   * Implemented a radial$ module for measuring diameters and radii.
+   * Bounds module is now named "bound$" since it is an auxilary geometry module.
+   * Index over ranges and vectors using Iterator, which improves performance for huge ranges.
+   * Polygon can now take a single list of vectors for the outline.
+   * Added a few simple tests for intersection, difference and union modules.
+   * Fixed problem with undef occasionally being initialised to the wrong type.
+   * Functions now always return undef when the evaluation give no result.
+   * Fixed nested functions. Test moved from non-working and added additional test.
+   * Fixed incorrect clearing of arguments and parameters.
+   * Distribute documentation as part of RapCAD. Available from Help menu.
+   * Allow polygon module to have multiple line vectors.
+   * Added some more tests for polygon, cone, square and circle modules.
+   * Test suite is now integrated with TravisCI continuous integration.
+   * Implemented a comlement module.
+   * Added more tests for rad deg sin cos and tan functions.
+
+0.9.4
+   * Implemented simple align module.
+   * Fix bug where updating the view gets called twice.
+   * Added interactive mode, for evaluating expressions.
+   * Implemented simple text for displaying numbers in auxilary geometry.
+   * Allow print to be used with no output model. Correct precision in print output.
+   * Added thickness parameter to Slice module.
+   * Added decompose module. Decomposition can be seen with view->show edges.
+   * Initial implementation of auxilary geometry for the bounds module.
+   * Group module now does fast unions on non-intersecting primitives.
+   * Performance improvement for unions.
+   * Correct first parameter name in rotate module "vector"->"angle".
+   * Added a concat() function.
+   * Added export for vrml 2.0 and obj file format.
+   * Polyline Module can now optionally do multiple lines.
+   * Outline now works with holes.
+   * Allow multiple files to be loaded from the commandline.
+
+0.9.3
+   * Moving forward only Qt5 and above will be supported.
+   * Now using Qt 5.2.0 for windows builds.
+   * Updated to use latest versions of CGAL Boost and dxflib for windows builds.
+   * Updates to documentation for building latest version of boost and CGAL on windows.
+   * Restored icon theme in windows build.
+   * Changes to make rotate_extrude work with radius of 0, and consider size of rotation object when calculating fragments.
+   * Resize module is more accurate, Added test for resize module.
+
+0.9.2
+   * Disabled some usless ui elements until the features are implemented.
+   * Create a point if a sphere of radius 0 requested.
+   * Fix 'for' with no argument, should not execute child statements.
+   * Zoom distance can no longer be negative, mouse wheel and shift+rmb zoom are more consistent.
+   * Implemented multmatrix module.
+   * Added '.csg' and '.rcad' files to the import statement.
+   * Implemented comparison mode for comparing stl, off, etc.
+   * Workaround bug in CGAL to fix to hard crash caused by an exception thown from the destructor of a CGAL class.
+   * Implemented export of CSG product. (Works but needs improvement)
+   * Fix for arguments in module instances and function invocations, they are now evaluated in new context.
+   * Fix polygon module. Single vectors, and nested vectors can be used for point list.
+   * Fix for index. Should return undef on out of bounds.
+   * Fix match by index. Should only be used when no arguments match by name.
+   * Allow cube to create squares when x=0, or y=0.
+   * Fix text value comparisons.
+   * Added a unit testing framework and lots of unit tests.
+   * Fix index out of bounds error in index operator.
+   * Implemented projection module.
+   * Fixes to allow correct unicode output under Qt4.x
+   * Make version commandline output return 0 exit code.
+   * Fixed a bug where variables are resolved in parent contextual scope rather than lexical scope.
+   * Implemented rad and deg functions for converting to and from radians.
+   * Fixed message. 'rendering time' is the wrong terminology.
+   * Fix error reporting and re-enable buttons on error.
+   * Fix outline module, now closes the gap.
+   * Initial implementation of GCODE generation. Currently reprap.rcam must be in the working directory.
+   * Rotate extrude now implemented and accepts $fn $fs and $fa.
+   * Fixes to linear extrude, seems to be stable (finally).
+   * Added write and writeln modules, echo now emits deprication warning.
+   * Make rotate module do exact rotations with multiples of 90 deg. (i.e. right angles)
+   * Fixed sign() function works with values less than 1.0.
+   * Support compilation against Qt5
+   * Implemented index operator for Text and Vector Values.
+
+0.9.1
+   * Apply short-circuit for logical operations.
+   * Fixed compilation USE_CGAL undefined.
+   * Fixed display of human readable rendering time.
+   * Autosize should default to false.
+   * Added ln() and log() functions.
+   * Minor improvement to hull evaluation.
+   * Documentation updates.
+   * Add parameters to modules and added ability to dump builtin modules into ed
+   * Save [as] shortcut Ctrl+[Shift]+S
+   * Added option to auto save when compiling.
+   * Implemented cone module.
+   * Fix for cylinder that can produce a cone when only two unnamed parameters s
+   * Make the tabs closeable.
+
+0.9.0
+   * Preliminary support for special variables $fn $fs and $fa.
+   * Improve memory management for csg tree nodes.
+   * Implemented a point() module.
+   * Implemented a slice() module.
+   * Improvements for hull module.
+
+0.8.0
+   * Implemented amf export feature.
+   * Allow range values to be treated as though they are vector values.
+   * Implemented preferences for edge and vertex size.
+   * Added simple about box dialog that displays the RapCAD version number.
+   * Improved the tool tips in main window tool bar.
+   * Improve memory management for values.
+   * Improvements to array concatenation code and some tests.
+   * Fixed some defeferenced null pointer exceptions in polygon.
+   * Documentation Improvements.
+   * Added some more examples 
+   * Licensing updated.
+
+0.7.0
+   * Implemented add assign (+=), and subtract assign (-=) operators.
+   * Added some simple examples.
+   * Implemented center() module for centering about the bounding box.
+   * Fix for cylinder and cube of zero height.
+   * Updated icons.
+   * Added support for non centered spheres
+   * Implemented new functions tanh() sinh() cosh() atan() atan2() acos()
+     asin() exp() pow() ceil() floor() round() min() max() sign() abs()
+     sin() cos() tan().
+   * Added warning when function cannot be found.
+
+0.6.0
+   * Allow for additional commas in Vector expressions, but raise a warning.
+   * Fixed implementation of default values for parameters.
+
+0.5.0
+  * Added support for export via the command line, this removes the -f command
+    line option.
+  * Implemented STL import.
+  * Relaxed the grammar slightly to allow 'for' and 'if' to follow module instances.
+  * Added 'len' function to return the length of a vector or string and an
+    'str' function for backwards compatibility.
+  * Implemented a polygon module.
+  * Added a version function which returns the rapcad version triplicate as a
+    vector and equality/inequality operator for vectors.
+  * Various bug fixes and documentation improvements.
+
+0.4.0
+  * Multiple files support.
+  * Dynamic arrays support using the concatinate operator ~ and the append
+    operator ~=
+  * Fixed mouse button assignments so that right mouse button controls pan and
+    zoom, and left mouse button to controls rotation.
+  * Added a resize module which is a more convenient way to scale, it also has an
+    autosize parameter.
+
+0.3.0
+  * Basic support for importing off files as modules, and support code
+    that will facilitate importing stl's dxf's etc.
+  * Implemented 'outline' module which strokes an outline around a polygon, and
+    a 'cylinder_surface' which creates the sides of a cylinder with no top or
+    bottom.
+  * Added a 'rands' function that returns a vector of random numbers.
+  * Implemented actions to show/hide areas of the GUI. Window position, size
+    visibility, and default viewport is saved across sessions.
+  * Tab name now reflects the loaded file and 'New' button now creates new tabs.
+  * Added application icon and toolbar/menu icons for Windows and Mac OS X.
+
+0.2.0
+  * Optimisation to 'linear_extrude' module.
+  * Implemented OFF and STL export.
+  * Export to PNG using view screen capture.
+  * Added 'bezier_surface' and 'prism' modules.
+  * New Preferences Dialog, and Preferences which are saved across sessions.
+  * Improved 'for' so that the variables inside are not in a seperate context.
+  * Basic types can be cast to vectors allowing for cube(10) to work.
+  * Better handling when arguments are not supplied to modules.
+  * Renamed 'inset' module as 'offset', must now supply negative values.
+  * Support for file associations.
+  * MacOS X support.
+  * Added first builtin functions 'sqrt' and 'sum'.
+
+0.1.0
+
+  * Initial Release

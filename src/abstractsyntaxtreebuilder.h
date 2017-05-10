@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #define ABSTRACTSYNTAXTREEBUILDER_H
 
 #include <QList>
+#include "decimal.h"
 #include "declaration.h"
 #include "statement.h"
 #include "variable.h"
@@ -30,11 +31,13 @@
 #include "instance.h"
 #include "script.h"
 #include "invocation.h"
+#include "abstracttokenbuilder.h"
 
 class AbstractSyntaxTreeBuilder
 {
 public:
 	virtual ~AbstractSyntaxTreeBuilder() {}
+	virtual void buildFileLocation(QString)=0;
 	virtual void buildScript(Declaration*)=0;
 	virtual void buildScript(QList<Declaration*>*)=0;
 	virtual void buildScript(QList<CodeDoc*>*)=0;
@@ -56,7 +59,7 @@ public:
 	virtual Statement* buildStatement(Variable*,Expression::Operator_e,Expression*)=0;
 	virtual Statement* buildStatement(QList<Statement*>*)=0;
 	virtual Statement* buildStatement(Variable*,Expression*)=0;
-	virtual Statement* buildStatement(QString*,Variable::Type_e,Expression*)=0;
+	virtual Statement* buildStatement(QString*,Variable::Storage_e,Expression*)=0;
 	virtual Statement* buildReturnStatement(Expression*)=0;
 	virtual Statement* buildIfElseStatement(Expression*,Statement*)=0;
 	virtual Statement* buildIfElseStatement(Expression*,Statement*,Statement*)=0;
@@ -74,6 +77,7 @@ public:
 	virtual Instance* buildInstance(Instance*)=0;
 	virtual Instance* buildInstance(QString*,Instance*)=0;
 	virtual Instance* buildInstance(Instance::Type_e,Instance*)=0;
+	virtual Instance* buildInstance(Instance::Type_e,QString*,QList<Argument*>*)=0;
 	virtual Instance* buildInstance(QString*,QList<Argument*>*)=0;
 	virtual Instance* buildInstance(Instance*,QList<Statement*>*)=0;
 	virtual QList<Parameter*>* buildParameters()=0;
@@ -90,24 +94,27 @@ public:
 	virtual Argument* buildArgument(Variable*,Expression*)=0;
 	virtual Expression* buildLiteral()=0;
 	virtual Expression* buildLiteral(bool)=0;
-	virtual Expression* buildLiteral(double value)=0;
+	virtual Expression* buildLiteral(decimal* value)=0;
 	virtual Expression* buildLiteral(QString* value)=0;
 	virtual Variable* buildVariable(QString* name)=0;
 	virtual Expression* buildVariable(Variable*)=0;
-	virtual Variable* buildVariable(QString*,Variable::Type_e)=0;
+	virtual Variable* buildVariable(QString*,Variable::Storage_e)=0;
 	virtual Expression* buildExpression(Expression*,QString*)=0;
 	virtual Expression* buildExpression(Expression*)=0;
 	virtual Expression* buildExpression(Expression::Operator_e,Expression*)=0;
 	virtual Expression* buildExpression(Expression*,Expression::Operator_e,Expression*)=0;
 	virtual Expression* buildExpression(Expression*,Expression*,Expression*)=0;
-	virtual Expression* buildExpression(QList<Expression*>*)=0;
+	virtual Expression* buildExpression(QList<Expression*>*,int)=0;
 	virtual QList<Expression*>* buildVector()=0;
 	virtual QList<Expression*>* buildVector(Expression*)=0;
 	virtual QList<Expression*>* buildVector(QList<Expression*>*,unsigned int,Expression*)=0;
 	virtual Expression* buildRange(Expression*,Expression*)=0;
 	virtual Expression* buildRange(Expression*,Expression*,Expression*)=0;
+	virtual Expression* buildComplex(Expression*,Expression*,Expression*,Expression*)=0;
 	virtual Invocation* buildInvocation(QString*,QList<Argument*>*)=0;
 	virtual Invocation* buildInvocation(QString*,Invocation*)=0;
+
+	virtual void setTokenBuilder(AbstractTokenBuilder*)=0;
 
 	virtual Script* getResult() const=0;
 };

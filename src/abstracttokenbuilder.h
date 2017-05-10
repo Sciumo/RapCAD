@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -62,7 +62,9 @@ public:
 	virtual unsigned int buildComponentwiseDivide()=0;
 	virtual unsigned int buildIncrement()=0;
 	virtual unsigned int buildDecrement()=0;
-	virtual unsigned int buildOuterProduct()=0;
+	virtual unsigned int buildAddAssign()=0;
+	virtual unsigned int buildSubtractAssign()=0;
+	virtual unsigned int buildCrossProduct()=0;
 	virtual unsigned int buildNamespace()=0;
 	virtual unsigned int buildAssign()=0;
 	virtual unsigned int buildAdd()=0;
@@ -72,6 +74,7 @@ public:
 	virtual unsigned int buildNot()=0;
 	virtual unsigned int buildMultiply()=0;
 	virtual unsigned int buildDivide()=0;
+	virtual unsigned int buildLength()=0;
 	virtual unsigned int buildModulus()=0;
 	virtual unsigned int buildConcatenate()=0;
 	virtual unsigned int buildAppend()=0;

@@ -2,13 +2,13 @@
 #define SUBDIVISIONMODULE_H
 
 #include "module.h"
-#include "context.h"
 
 class SubDivisionModule : public Module
 {
+	Q_DECLARE_TR_FUNCTIONS(SubDivisionModule)
 public:
-	SubDivisionModule();
-	Node* evaluate(Context*,QList<Node*>);
+	SubDivisionModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // SUBDIVISIONMODULE_H

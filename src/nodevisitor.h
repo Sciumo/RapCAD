@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ public:
 	virtual void visit(class PrimitiveNode*)=0;
 	virtual void visit(class PolylineNode*)=0;
 	virtual void visit(class UnionNode*)=0;
+	virtual void visit(class GroupNode*)=0;
 	virtual void visit(class DifferenceNode*)=0;
 	virtual void visit(class IntersectionNode*)=0;
 	virtual void visit(class SymmetricDifferenceNode*)=0;
@@ -41,6 +42,21 @@ public:
 	virtual void visit(class ImportNode*)=0;
 	virtual void visit(class TransformationNode*)=0;
 	virtual void visit(class ResizeNode*)=0;
+	virtual void visit(class AlignNode*)=0;
+	virtual void visit(class PointNode*)=0;
+	virtual void visit(class SliceNode*)=0;
+	virtual void visit(class ProductNode*)=0;
+	virtual void visit(class ProjectionNode*)=0;
+	virtual void visit(class DecomposeNode*)=0;
+	virtual void visit(class ComplementNode*)=0;
+	virtual void visit(class RadialsNode*)=0;
+	virtual void visit(class VolumesNode*)=0;
+	virtual void visit(class TriangulateNode*)=0;
+	virtual void visit(class MaterialNode*)=0;
+	virtual void visit(class DiscreteNode*)=0;
+	virtual void visit(class NormalsNode*)=0;
+	virtual void visit(class SimplifyNode*)=0;
+	virtual void visit(class ChildrenNode*)=0;
 };
 
 #endif // NODEVISITOR_H

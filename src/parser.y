@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,30 +16,29 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-%expect 1 // Dangling else problem causes 1 shift/reduce conflict
-
 %{
 #include <QString>
 #include <QList>
+#include "decimal.h"
 #include "syntaxtreebuilder.h"
 #include "tokenbuilder.h"
 #include "script.h"
 #include "reporter.h"
 
 extern char *lexertext;
-extern void lexerinit(AbstractTokenBuilder*,Reporter*,QString,bool);
-Script* parse(QString,Reporter*);
+Script* parse(QString,Reporter*,bool);
 
-static void parsererror(char const *);
+static void parsererror(const char*);
 static int parserlex();
 static AbstractSyntaxTreeBuilder *builder;
 static AbstractTokenBuilder* tokenizer;
 static Reporter* reporter;
+
 %}
 
 %union {
 	QString* text;
-	double number;
+	decimal* number;
 	unsigned int count;
 	class Declaration* decl;
 	class QList<Declaration*>* decls;
@@ -63,7 +62,8 @@ static Reporter* reporter;
 %token <text> USE
 %token <text> IMPORT
 %token MODULE FUNCTION
-%token IF ELSE
+%token IF
+%right THEN ELSE
 %token FOR
 %token CONST PARAM
 %token <text> IDENTIFIER
@@ -73,15 +73,15 @@ static Reporter* reporter;
 %token AS NS
 
 %right RETURN
-%right '=' AP
+%right '=' APPEND
 %right '?' ':'
 %left OR
 %left AND
 %left '<' LE GE '>'
 %left EQ NE
-%left '!' '+' '-' '~'
+%left '!' '+' '-' '~' '|'
 %left '*' '/' '%'
-%left INC DEC
+%left INC DEC ADDA SUBA
 %left CM CD CP
 %right '^'
 %left '[' ']'
@@ -89,8 +89,8 @@ static Reporter* reporter;
 
 %type <cdocs> codedoc codedoc_param
 %type <count> optional_commas
-%type <decl>  declaration use_declaration import_declaration single_declaration define_declaration
-%type <decls>  declaration_list single_declaration_list compound_declaration
+%type <decl> declaration use_declaration import_declaration single_declaration define_declaration
+%type <decls> declaration_list single_declaration_list compound_declaration
 %type <param> parameter
 %type <params> parameters
 %type <arg> argument
@@ -219,6 +219,7 @@ single_statement
 	| for_statement
 	{ $$ = builder->buildStatement($1); }
 	| return_statement
+	{ $$ = builder->buildStatement($1); }
 	;
 
 return_statement
@@ -243,12 +244,16 @@ statement_list
 assign_statement
 	: variable '=' expression
 	{ $$ = builder->buildStatement($1,$3); }
-	| variable AP expression
+	| variable APPEND expression
 	{ $$ = builder->buildStatement($1,Expression::Append,$3); }
 	| variable INC
 	{ $$ = builder->buildStatement($1,Expression::Increment); }
 	| variable DEC
 	{ $$ = builder->buildStatement($1,Expression::Decrement); }
+	| variable ADDA expression
+	{ $$ = builder->buildStatement($1,Expression::AddAssign,$3); }
+	| variable SUBA expression
+	{ $$ = builder->buildStatement($1,Expression::SubAssign,$3); }
 	| CONST IDENTIFIER '=' expression
 	{ $$ = builder->buildStatement($2,Variable::Const,$4); }
 	| PARAM IDENTIFIER '=' expression
@@ -256,7 +261,7 @@ assign_statement
 	;
 
 ifelse_statement
-	: IF '(' expression ')' statement
+	: IF '(' expression ')' statement %prec THEN
 	{ $$ = builder->buildIfElseStatement($3,$5); }
 	| IF '(' expression ')' statement ELSE statement
 	{ $$ = builder->buildIfElseStatement($3,$5,$7); }
@@ -293,8 +298,12 @@ expression
 	{ $$ = builder->buildRange($2,$4); }
 	| '[' expression ':' expression ':' expression ']'
 	{ $$ = builder->buildRange($2,$4,$6); }
-	| '[' vector_expression ']'
-	{ $$ = builder->buildExpression($2); }
+	| '[' vector_expression optional_commas ']'
+	{ $$ = builder->buildExpression($2,$3); }
+	| '<' expression ',' expression ',' expression ',' expression '>'
+	{ $$ = builder->buildComplex($2,$4,$6,$8); }
+	| '|' expression '|'
+	{ $$ = builder->buildExpression(Expression::Length,$2); }
 	| expression '^' expression
 	{ $$ = builder->buildExpression($1,Expression::Exponent,$3); }
 	| expression '*' expression
@@ -308,7 +317,7 @@ expression
 	| expression CD expression
 	{ $$ = builder->buildExpression($1,Expression::ComponentwiseDivide,$3); }
 	| expression CP expression
-	{ $$ = builder->buildExpression($1,Expression::OuterProduct,$3); }
+	{ $$ = builder->buildExpression($1,Expression::CrossProduct,$3); }
 	| expression '%' expression
 	{ $$ = builder->buildExpression($1,Expression::Modulus,$3); }
 	| expression '+' expression
@@ -384,10 +393,12 @@ parameter
 	;
 
 compound_instance
-	: '{' '}'
-	{ $$ = builder->buildStatements(); }
-	| '{' statement_list '}'
-	{ $$ = builder->buildStatements($2); }
+	: compound_statement
+	{ $$ = builder->buildStatements($1); }
+	| ifelse_statement
+	{ $$ = builder->buildStatements($1); }
+	| for_statement
+	{ $$ = builder->buildStatements($1); }
 	| module_instance
 	{ $$ = builder->buildStatements($1); }
 	;
@@ -404,6 +415,8 @@ single_instance
 	{ $$ = builder->buildInstance($1,$3); }
 	| IDENTIFIER '(' arguments ')'
 	{ $$ = builder->buildInstance($1,$3); }
+	| IDENTIFIER '$' '(' arguments ')'
+	{ $$ = builder->buildInstance(Instance::Auxilary,$1,$4); }
 	| '!' single_instance
 	{ $$ = builder->buildInstance(Instance::Root,$2); }
 	| '#' single_instance
@@ -444,18 +457,21 @@ static int parserlex()
 	return tokenizer->nextToken();
 }
 
-static void parsererror(char const *s)
+static void parsererror(const char* s)
 {
+    if(reporter)
 	reporter->reportSyntaxError(tokenizer,s,lexertext);
 }
 
-Script* parse(QString path, Reporter* r)
+Script* parse(QString input, Reporter* r, bool isFile)
 {
 	reporter=r;
 	builder=new SyntaxTreeBuilder();
+	if(isFile)
+	    builder->buildFileLocation(input);
 
-	tokenizer=new TokenBuilder();
-	lexerinit(tokenizer,reporter,path,true);
+	tokenizer=new TokenBuilder(reporter,input,isFile);
+	builder->setTokenBuilder(tokenizer);
 	parserparse();
 	delete tokenizer;
 

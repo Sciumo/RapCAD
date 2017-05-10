@@ -1,0 +1,5 @@
+function test() {
+a=0.7071067811865475;
+b=sin(45);
+return a==b;
+}

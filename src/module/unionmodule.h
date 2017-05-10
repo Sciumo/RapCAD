@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,10 +24,9 @@
 class UnionModule : public Module
 {
 public:
-	UnionModule();
-	Node* evaluate(Context*,QList<Node*>);
-protected:
-	UnionModule(const QString s);
+	UnionModule(Reporter*);
+	Node* evaluate(Context*);
+	static Node* createUnion(QList<Node*> childnodes);
 };
 
 #endif // UNIONMODULE_H

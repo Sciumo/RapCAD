@@ -1,0 +1,6 @@
+unpad-paren
+align-pointer=type
+style=linux
+lineend=linux
+indent=force-tab
+suffix=none

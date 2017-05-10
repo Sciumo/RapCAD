@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,27 +15,79 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#if USE_CGAL
 #include "cgalrenderer.h"
 #include "preferences.h"
+#include "primitive.h"
+#include "decimal.h"
 
-using CGAL::OGL::Nef3_Converter;
+CGALRenderer::CGALRenderer(Primitive* primitive)
+{
+	simple=new SimpleRenderer(primitive);
+	loadPreferences();
+	descendChildren(primitive);
+}
 
-CGALRenderer::CGALRenderer(const CGALPrimitive& prim)
+CGALRenderer::~CGALRenderer()
+{
+	delete simple;
+}
+
+void CGALRenderer::descendChildren(Primitive* p)
+{
+	typedef CGAL::OGL::Nef3_Converter<CGAL::NefPolyhedron3> converter;
+	CGALPrimitive* pr=dynamic_cast<CGALPrimitive*>(p);
+	if(pr) {
+		converter::convert_to_OGLPolyhedron(pr->getNefPolyhedron(),this);
+	} else {
+		foreach(Primitive* c, p->getChildren())
+			descendChildren(c);
+	}
+}
+
+void CGALRenderer::loadPreferences()
 {
 	Preferences* p = Preferences::getInstance();
-	setColor(VertexColor,true,p->getMarkedVertexColor());
-	setColor(VertexColor,false,p->getVertexColor());
-	setColor(EdgeColor,true,p->getMarkedEdgeColor());
-	setColor(EdgeColor,false,p->getEdgeColor());
-	setColor(FacetColor,true,p->getMarkedFacetColor());
-	setColor(FacetColor,false,p->getFacetColor());
-	Nef3_Converter<CGAL::NefPolyhedron3>::convert_to_OGLPolyhedron(prim.getNefPolyhedron(),this);
+	setColor(markedVertexColor,p->getMarkedVertexColor());
+	setColor(vertexColor,p->getVertexColor());
+	setColor(markedEdgeColor,p->getMarkedEdgeColor());
+	setColor(edgeColor,p->getEdgeColor());
+	setColor(markedFacetColor,p->getMarkedFacetColor());
+	setColor(facetColor,p->getFacetColor());
+	vertexSize=p->getVertexSize();
+	edgeSize=p->getEdgeSize();
+}
+
+void CGALRenderer::preferencesUpdated()
+{
+	loadPreferences();
+	init_=false;
+}
+
+void CGALRenderer::setCompiling(bool value)
+{
+	if(value) {
+		desaturate(markedVertexColor);
+		desaturate(vertexColor);
+		desaturate(markedEdgeColor);
+		desaturate(edgeColor);
+		desaturate(markedFacetColor);
+		desaturate(facetColor);
+	} else {
+		loadPreferences();
+	}
+	init_=false;
+}
+
+void CGALRenderer::desaturate(CGAL::Color& c)
+{
+	QColor rgb(c.red(),c.green(),c.blue());
+	setColor(c,QColor::fromHsv(rgb.hue(),0,rgb.value()));
 }
 
 void CGALRenderer::draw(bool skeleton, bool showedges)
 {
-	init();
+	init(); //init returns instantly if its already been called.
 	if(!skeleton) {
 		glCallList(this->object_list_+2);
 	}
@@ -45,40 +97,39 @@ void CGALRenderer::draw(bool skeleton, bool showedges)
 		glCallList(this->object_list_);
 		glEnable(GL_LIGHTING);
 	}
+
+	simple->draw(skeleton,showedges);
+
 }
 
-void CGALRenderer::setColor(Color_e t,bool marked,QColor c)
+void CGALRenderer::setColor(CGAL::Color& t,QColor c)
 {
 	CGAL::Color cc(c.red(),c.green(),c.blue(),c.alpha());
-	setColor(t,marked,cc);
+	t=cc;
 }
 
-void CGALRenderer::setColor(Color_e t,bool marked,CGAL::Color c)
+CGAL::Color CGALRenderer::getVertexColor(bool mark) const
 {
-	switch(t) {
-	case VertexColor:
-		marked ? markedVertexColor=c : vertexColor=c;
-		return;
-	case EdgeColor:
-		marked ? markedEdgeColor=c : edgeColor=c;
-		return;
-	case FacetColor:
-		marked ? markedFacetColor=c : facetColor=c;
-		return;
-	}
+	return mark ? markedVertexColor : vertexColor;
 }
 
-CGAL::Color CGALRenderer::getVertexColor(Vertex_iterator v) const
+CGAL::Color CGALRenderer::getEdgeColor(bool mark) const
 {
-	return v->mark() ? markedVertexColor : vertexColor;
+	return mark ? markedEdgeColor : edgeColor;
 }
 
-CGAL::Color CGALRenderer::getEdgeColor(Edge_iterator e) const
+CGAL::Color CGALRenderer::getFacetColor(bool mark) const
 {
-	return e->mark() ? markedEdgeColor : edgeColor;
+	return mark ? markedFacetColor : facetColor;
 }
 
-CGAL::Color CGALRenderer::getFacetColor(Halffacet_iterator f) const
+float CGALRenderer::getVertexSize() const
 {
-	return f->mark() ? markedFacetColor : facetColor;
+	return vertexSize;
 }
+
+float CGALRenderer::getEdgeSize() const
+{
+	return edgeSize;
+}
+#endif

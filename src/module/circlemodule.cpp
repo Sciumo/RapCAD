@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,31 +19,41 @@
 #include "circlemodule.h"
 #include "numbervalue.h"
 
-CircleModule::CircleModule() : PrimitiveModule("circle")
+CircleModule::CircleModule(Reporter* r) : PrimitiveModule(r,"circle")
 {
+	addDescription(tr("Constructs a circle. It will be placed centered on the xy plane."));
+	addParameter("radius",tr("The radius of the circle."));
 }
 
-Node* CircleModule::evaluate(Context* ctx,QList<Node*>)
+Node* CircleModule::evaluate(Context* ctx)
 {
-	NumberValue* rValue=dynamic_cast<NumberValue*>(ctx->getArgument(0,"radius"));
+	NumberValue* rValue=dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
 
-	double r,fn,fs,fa;
+	decimal r=1;
 	if(rValue) {
-
 		r=rValue->getNumber();
+	} else {
+		NumberValue* dValue = dynamic_cast<NumberValue*>(ctx->getArgument(1,"diameter"));
+		if(dValue)
+			r=(dValue->getNumber()/2.0);
 	}
 
-	fn=0.0;
-	fs=1.0;
-	fa=12.0;
-	int f = getFragments(r,fn,fs,fa);
-	Polygon c = getCircle(r,f,0);
-	PrimitiveNode* p = new PrimitiveNode();
+	Fragment* fg = Fragment::createFragment(ctx);
+	int f = fg->getFragments(r);
+	delete fg;
 
+	QList<Point> c = getCircle(r,f,0);
+
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	int i=0;
 	if(r > 0) {
-		p->createPolygon();
-		for(int i=0; i<f; i++)
-			p->appendVertex(c.at(i));
+		Polygon* pg=p->createPolygon();
+		foreach(Point pt, c) {
+			p->createVertex(pt);
+			pg->append(i++);
+		}
 	}
 
 	return p;

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,11 +20,18 @@
 
 SyntaxTreeBuilder::SyntaxTreeBuilder()
 {
-	script = new Script();
+	script=new Script();
+	tokenBuilder=NULL;
 }
 
 SyntaxTreeBuilder::~SyntaxTreeBuilder()
 {
+}
+
+void SyntaxTreeBuilder::buildFileLocation(QString f)
+{
+	QFileInfo* info=new QFileInfo(f);
+	script->setFileLocation(info);
 }
 
 void SyntaxTreeBuilder::buildScript(Declaration* dec)
@@ -182,13 +189,13 @@ Statement* SyntaxTreeBuilder::buildStatement(Variable* var,Expression* exp)
 	return result;
 }
 
-Statement* SyntaxTreeBuilder::buildStatement(QString* name,Variable::Type_e type, Expression* exp)
+Statement* SyntaxTreeBuilder::buildStatement(QString* name,Variable::Storage_e c, Expression* exp)
 {
 	AssignStatement* result = new AssignStatement();
 	Variable* var = new Variable();
 	var->setName(*name);
 	delete name;
-	var->setType(type);
+	var->setStorage(c);
 	result->setVariable(var);
 	result->setExpression(exp);
 	return result;
@@ -322,9 +329,22 @@ Instance* SyntaxTreeBuilder::buildInstance(Instance::Type_e type,Instance* inst)
 	return inst;
 }
 
+Instance* SyntaxTreeBuilder::buildInstance(Instance::Type_e type,QString* name,QList<Argument*>* args)
+{
+	Instance* result = new Instance();
+	result->setLineNumber(getLineNumber());
+	result->setType(type);
+	result->setName(*name);
+	delete name;
+	result->setArguments(*args);
+	delete args;
+	return result;
+}
+
 Instance* SyntaxTreeBuilder::buildInstance(QString* name,QList<Argument*>* args)
 {
 	Instance* result = new Instance();
+	result->setLineNumber(getLineNumber());
 	result->setName(*name);
 	delete name;
 	result->setArguments(*args);
@@ -436,10 +456,11 @@ Expression* SyntaxTreeBuilder::buildLiteral(bool value)
 	return result;
 }
 
-Expression* SyntaxTreeBuilder::buildLiteral(double value)
+Expression* SyntaxTreeBuilder::buildLiteral(decimal* value)
 {
 	Literal* result = new Literal();
-	result->setValue(value);
+	result->setValue(*value);
+	delete value;
 	return result;
 }
 
@@ -464,10 +485,10 @@ Expression* SyntaxTreeBuilder::buildVariable(Variable* var)
 	return var;
 }
 
-Variable* SyntaxTreeBuilder::buildVariable(QString* name,Variable::Type_e type)
+Variable* SyntaxTreeBuilder::buildVariable(QString* name,Variable::Storage_e c)
 {
 	Variable* result = new Variable();
-	result->setType(type);
+	result->setStorage(c);
 	result->setName(*name);
 	delete name;
 	return result;
@@ -516,10 +537,11 @@ Expression* SyntaxTreeBuilder::buildExpression(Expression* cond,Expression* true
 	return result;
 }
 
-Expression* SyntaxTreeBuilder::buildExpression(QList<Expression*>* exps)
+Expression* SyntaxTreeBuilder::buildExpression(QList<Expression*>* exps,int count)
 {
 	VectorExpression* result = new VectorExpression();
 	result->setChildren(*exps);
+	result->setAdditionalCommas(count);
 	delete exps;
 	return result;
 }
@@ -564,9 +586,24 @@ Expression* SyntaxTreeBuilder::buildRange(Expression* srt,Expression* stp,Expres
 	return result;
 }
 
+Expression* SyntaxTreeBuilder::buildComplex(Expression* real, Expression* i, Expression* j, Expression* k)
+{
+	ComplexExpression* result=new ComplexExpression();
+	result->setReal(real);
+	QList<Expression*> parts;
+	parts.append(i);
+	parts.append(j);
+	parts.append(k);
+	VectorExpression* imaginary=new VectorExpression();
+	imaginary->setChildren(parts);
+	result->setImaginary(imaginary);
+	return result;
+}
+
 Invocation* SyntaxTreeBuilder::buildInvocation(QString* name,QList<Argument*>* args)
 {
 	Invocation* result = new Invocation();
+	result->setLineNumber(getLineNumber());
 	result->setName(*name);
 	delete name;
 	result->setArguments(*args);
@@ -579,6 +616,18 @@ Invocation* SyntaxTreeBuilder::buildInvocation(QString* name,Invocation* inv)
 	inv->setNamespace(*name);
 	delete name;
 	return inv;
+}
+
+void SyntaxTreeBuilder::setTokenBuilder(AbstractTokenBuilder* value)
+{
+	tokenBuilder=value;
+}
+
+int SyntaxTreeBuilder::getLineNumber() const
+{
+	if(tokenBuilder)
+		return tokenBuilder->getLineNumber();
+	return 0;
 }
 
 Script* SyntaxTreeBuilder::getResult() const

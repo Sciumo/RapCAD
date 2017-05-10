@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,12 +39,14 @@
 #include "rangeexpression.h"
 #include "invocation.h"
 #include "codedoc.h"
+#include "complexexpression.h"
 
 class SyntaxTreeBuilder : public AbstractSyntaxTreeBuilder
 {
 public:
 	SyntaxTreeBuilder();
 	~SyntaxTreeBuilder();
+	void buildFileLocation(QString);
 	void buildScript(Declaration*);
 	void buildScript(QList<Declaration*>*);
 	void buildScript(QList<CodeDoc*>*);
@@ -66,7 +68,7 @@ public:
 	Statement* buildStatement(Variable*,Expression::Operator_e,Expression*);
 	Statement* buildStatement(QList<Statement*>*);
 	Statement* buildStatement(Variable*,Expression*);
-	Statement* buildStatement(QString*,Variable::Type_e,Expression*);
+	Statement* buildStatement(QString*,Variable::Storage_e,Expression*);
 	Statement* buildReturnStatement(Expression*);
 	Statement* buildIfElseStatement(Expression*,Statement*);
 	Statement* buildIfElseStatement(Expression*,Statement*,Statement*);
@@ -84,6 +86,7 @@ public:
 	Instance* buildInstance(Instance*);
 	Instance* buildInstance(QString*,Instance*);
 	Instance* buildInstance(Instance::Type_e,Instance*);
+	Instance* buildInstance(Instance::Type_e,QString*,QList<Argument*>*);
 	Instance* buildInstance(QString*,QList<Argument*>*);
 	Instance* buildInstance(Instance*,QList<Statement*>*);
 	QList<Parameter*>* buildParameters();
@@ -100,28 +103,34 @@ public:
 	unsigned int buildOptionalCommas(unsigned int);
 	Expression* buildLiteral();
 	Expression* buildLiteral(bool);
-	Expression* buildLiteral(double value);
+	Expression* buildLiteral(decimal* value);
 	Expression* buildLiteral(QString* value);
 	Variable* buildVariable(QString* name);
 	Expression* buildVariable(Variable*);
-	Variable* buildVariable(QString*,Variable::Type_e);
+	Variable* buildVariable(QString*,Variable::Storage_e);
 	Expression* buildExpression(Expression*,QString*);
 	Expression* buildExpression(Expression*);
 	Expression* buildExpression(Expression::Operator_e,Expression*);
 	Expression* buildExpression(Expression*,Expression::Operator_e,Expression*);
 	Expression* buildExpression(Expression*,Expression*,Expression*);
-	Expression* buildExpression(QList<Expression*>*);
+	Expression* buildExpression(QList<Expression*>*,int);
 	QList<Expression*>* buildVector();
 	QList<Expression*>* buildVector(Expression*);
 	QList<Expression*>* buildVector(QList<Expression*>*,unsigned int,Expression*);
 	Expression* buildRange(Expression*,Expression*);
 	Expression* buildRange(Expression*,Expression*,Expression*);
+	Expression* buildComplex(Expression*,Expression*,Expression*,Expression*);
 	Invocation* buildInvocation(QString*,QList<Argument*>*);
 	Invocation* buildInvocation(QString*,Invocation*);
 
+	void setTokenBuilder(AbstractTokenBuilder*);
+
 	Script* getResult() const;
 private:
+	int getLineNumber() const;
+
 	Script* script;
+	AbstractTokenBuilder* tokenBuilder;
 };
 
 #endif // SYNTAXTREEBUILDER_H

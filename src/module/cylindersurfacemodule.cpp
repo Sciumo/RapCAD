@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,51 +20,72 @@
 #include "numbervalue.h"
 #include "booleanvalue.h"
 
-CylinderSurfaceModule::CylinderSurfaceModule() : PrimitiveModule("cylinder_surface")
+CylinderSurfaceModule::CylinderSurfaceModule(Reporter* r) : PrimitiveModule(r,"cylinder_surface")
 {
+	addDescription(tr("Constructs the surface of a cylinder without top and bottom facets."));
+	addParameter("height",tr("The height of the cylinder surface."));
+	addParameter("radius",tr("The radius of the cylinder surface."));
+	addParameter("center",tr("Specifies whether to center the cylinder along the z axis."));
 }
 
 
-Node* CylinderSurfaceModule::evaluate(Context* ctx, QList<Node *>)
+Node* CylinderSurfaceModule::evaluate(Context* ctx)
 {
-	NumberValue* heightValue = dynamic_cast<NumberValue*>(ctx->getArgument(0,"height"));
-	double h=1.0;
+	NumberValue* heightValue = dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
+	decimal h=1.0;
 	if(heightValue)
 		h=heightValue->getNumber();
 
-	NumberValue* rValue = dynamic_cast<NumberValue*>(ctx->getArgument(1,"radius"));
-	double r=1.0,fn,fs,fa;
+	NumberValue* rValue = dynamic_cast<NumberValue*>(getParameterArgument(ctx,1));
+	decimal r=1.0;
 	if(rValue)
 		r=rValue->getNumber();
 
-	BooleanValue* centerValue=dynamic_cast<BooleanValue*>(ctx->getArgument(2,"center"));
+	Value* centerValue=getParameterArgument(ctx,2);
 	bool center=false;
+
 	if(centerValue)
 		center=centerValue->isTrue();
 
-	double z1,z2;
-	if(center) {
-		z1 = -h/2;
-		z2 = +h/2;
-	} else {
-		z1 = 0.0;
-		z2 = h;
-	}
-	fn=0.0;
-	fs=1.0;
-	fa=12.0;
-	int f = getFragments(r,fn,fs,fa);
-	Polygon c1 = getCircle(r,f,z1);
-	Polygon c2 = getCircle(r,f,z2);
-	PrimitiveNode* p = new PrimitiveNode();
+	decimal z1,z2;
+	z1 = 0.0;
+	z2 = h;
 
-	for(int i=0; i<f; i++) {
+	Fragment* fg = Fragment::createFragment(ctx);
+	int f = fg->getFragments(r);
+	delete fg;
+
+	QList<Point> c1=getCircle(r,f,z1);
+	QList<Point> c2=getCircle(r,f,z2);
+
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	foreach(Point pt,c1) {
+		p->createVertex(pt);
+	}
+
+	foreach(Point pt,c2) {
+		p->createVertex(pt);
+	}
+
+	Polygon* pg;
+	for(int i=0; i<f; ++i) {
 		int j=(i+1)%f;
-		p->createPolygon();
-		p->appendVertex(c1.at(i));
-		p->appendVertex(c2.at(i));
-		p->appendVertex(c2.at(j));
-		p->appendVertex(c1.at(j));
+		int k=i+f;
+		int l=j+f;
+		pg=p->createPolygon();
+		pg->append(i);
+		pg->append(k);
+		pg->append(l);
+		pg->append(j);
+	}
+
+	if(center) {
+		AlignNode* n=new AlignNode();
+		n->setCenterVertical();
+		n->addChild(p);
+		return n;
 	}
 
 	return p;

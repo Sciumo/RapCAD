@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,96 +21,132 @@
 #include "numbervalue.h"
 #include "booleanvalue.h"
 #include "node/primitivenode.h"
-#include "tau.h"
+#include "rmath.h"
 
-CylinderModule::CylinderModule() : PrimitiveModule("cylinder")
+CylinderModule::CylinderModule(Reporter* r) : PrimitiveModule(r,"cylinder")
 {
+	addDescription(tr("Constructs a cylinder. It will be placed centered on the xy plane."));
+	addParameter("height",tr("The height of the cylinder"));
+	addParameter("radius",tr("The radius of the cylinder"));
+	addParameter("center",tr("Specifies whether to center the cylinder vertically along the z axis."));
 }
 
-Node* CylinderModule::evaluate(Context* ctx,QList<Node*>)
+Node* CylinderModule::evaluate(Context* ctx)
 {
-	NumberValue* heightValue = dynamic_cast<NumberValue*>(ctx->getArgument(0,"height"));
-	double h=1.0;
+	NumberValue* heightValue = dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
+	decimal h=1.0;
 	if(heightValue)
 		h=heightValue->getNumber();
 
-	NumberValue* r1Value = dynamic_cast<NumberValue*>(ctx->getArgument(1,"radius1",true));
-	NumberValue* r2Value = dynamic_cast<NumberValue*>(ctx->getArgument(2,"radius2",true));
+	NumberValue* r1Value = dynamic_cast<NumberValue*>(ctx->getArgument(1,"radius1"));
+	NumberValue* r2Value = dynamic_cast<NumberValue*>(ctx->getArgument(2,"radius2"));
 	BooleanValue* centerValue;
 
-	double r=1.0,r1=1.0,r2=1.0,fn,fs,fa;
+	decimal r1=1.0,r2=1.0;
 	if(!r1Value) {
-		NumberValue* rValue = dynamic_cast<NumberValue*>(ctx->getArgument(1,"radius"));
-		centerValue = dynamic_cast<BooleanValue*>(ctx->getArgument(2,"center"));
+		NumberValue* rValue = dynamic_cast<NumberValue*>(getParameterArgument(ctx,1));
+		centerValue = dynamic_cast<BooleanValue*>(getParameterArgument(ctx,2));
 		if(rValue) {
-			r1=r2=r=rValue->getNumber();
+			r1=r2=rValue->getNumber();
 		} else {
 			NumberValue* dValue = dynamic_cast<NumberValue*>(ctx->getArgument(1,"diameter"));
 			if(dValue)
-				r1=r2=r=(dValue->getNumber()/2.0);
+				r1=r2=(dValue->getNumber()/2.0);
 		}
 	} else {
 		if(r1Value)
 			r1=r1Value->getNumber();
 		if(r2Value)
 			r2=r2Value->getNumber();
+		else
+			r2=r1;
 		centerValue = dynamic_cast<BooleanValue*>(ctx->getArgument(3,"center"));
-		r=fmax(r1,r2);
 	}
 	bool center = false;
 	if(centerValue)
 		center=centerValue->isTrue();
 
-	double z1,z2;
-	if(center) {
-		z1 = -h/2;
-		z2 = +h/2;
-	} else {
-		z1 = 0.0;
-		z2 = h;
-	}
-	fn=0.0;
-	fs=1.0;
-	fa=12.0;
-	int f = getFragments(r,fn,fs,fa);
-	Polygon c1 = getCircle(r1,f,z1);
-	Polygon c2 = getCircle(r2,f,z2);
-	PrimitiveNode* p = new PrimitiveNode();
+	decimal z1,z2;
+	z1 = 0.0;
+	z2 = h;
 
-	for(int i=0; i<f; i++) {
+	decimal r=r_max(r1,r2);
+	Fragment* fg = Fragment::createFragment(ctx);
+	int f = fg->getFragments(r);
+	delete fg;
+
+	QList<Point> c1=getCircle(r1,f,z1);
+	QList<Point> c2=getCircle(r2,f,z2);
+
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
+	int n=0;
+	Polygon* pg;
+	if(r1>0) {
+		pg=p->createPolygon();
+		foreach(Point pt,c1) {
+			p->createVertex(pt);
+			pg->append(n++);
+		}
+	}
+
+	if(h==0.0)
+		return p;
+
+	if(r2>0) {
+		pg=p->createPolygon();
+		foreach(Point pt,c2) {
+			p->createVertex(pt);
+			pg->prepend(n++);
+		}
+	}
+
+	/* In the cases where r1 or r2 are 0,  n will now convinently be pointing
+	 * one past the end, and point to the apex as defined here when needed */
+	if(r1<=0)
+		p->createVertex(0.0,0.0,z1);
+	if(r2<=0)
+		p->createVertex(0.0,0.0,z2);
+
+	for(int i=0; i<f; ++i) {
 		int j=(i+1)%f;
+
+		int k=r2<=0?n:i;
+		int l=r1<=0?n:j;
+
+		if(r1>0&&r2>0) {
+			k+=f;
+			j+=f;
+		}
+
 		if(r1 == r2) {
-			p->createPolygon();
-			p->appendVertex(c1.at(i));
-			p->appendVertex(c2.at(i));
-			p->appendVertex(c2.at(j));
-			p->appendVertex(c1.at(j));
+			pg=p->createPolygon();
+			pg->append(i);
+			pg->append(k);
+			pg->append(j);
+			pg->append(l);
 		} else {
 			if(r1 > 0) {
-				p->createPolygon();
-				p->appendVertex(c1.at(i));
-				p->appendVertex(c2.at(i));
-				p->appendVertex(c1.at(j));
+				pg=p->createPolygon();
+				pg->append(i);
+				pg->append(k);
+				pg->append(l);
 			}
 			if(r2 > 0) {
-				p->createPolygon();
-				p->appendVertex(c2.at(i));
-				p->appendVertex(c2.at(j));
-				p->appendVertex(c1.at(j));
+				pg=p->createPolygon();
+				pg->append(j);
+				pg->append(l);
+				pg->append(k);
 			}
 		}
 	}
 
-	if(r1 > 0) {
-		p->createPolygon();
-		for(int i=0; i<f; i++)
-			p->appendVertex(c1.at(i));
-	}
-
-	if(r2 > 0) {
-		p->createPolygon();
-		for(int i=0; i<f; i++)
-			p->prependVertex(c2.at(i));
+	if(center) {
+		AlignNode* n=new AlignNode();
+		n->setCenterVertical();
+		n->addChild(p);
+		return n;
 	}
 
 	return p;

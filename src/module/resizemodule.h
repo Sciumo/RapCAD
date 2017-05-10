@@ -2,13 +2,13 @@
 #define RESIZEMODULE_H
 
 #include "module.h"
-#include "context.h"
 
 class ResizeModule : public Module
 {
+	Q_DECLARE_TR_FUNCTIONS(ResizeModule)
 public:
-	ResizeModule();
-	Node* evaluate(Context*,QList<Node*>);
+	ResizeModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // RESIZEMODULE_H

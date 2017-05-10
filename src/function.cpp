@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "function.h"
 #include "functionscope.h"
+#include "context.h"
 
 Function::Function()
 {
@@ -32,8 +33,8 @@ Function::Function(QString n)
 
 Function::~Function()
 {
-	for(int i=0; i<parameters.size(); i++)
-		delete parameters.at(i);
+	foreach(Parameter* p, parameters)
+		delete p;
 
 	delete scope;
 }
@@ -77,4 +78,17 @@ void Function::accept(TreeVisitor& v)
 Value* Function::evaluate(Context*)
 {
 	return NULL;
+}
+
+void Function::addParameter(QString name)
+{
+	Parameter* p = new Parameter();
+	p->setName(name);
+	parameters.append(p);
+}
+
+Value* Function::getParameterArgument(Context* ctx, int index)
+{
+	Parameter* p = parameters.at(index);
+	return ctx->getArgument(index,p->getName());
 }

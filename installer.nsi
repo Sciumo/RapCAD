@@ -1,19 +1,24 @@
 Name "RapCAD"
+Icon "rapcad.ico"
 OutFile "rapcad_setup.exe"
 InstallDir $PROGRAMFILES\RapCAD
 DirText "This will install RapCAD on your computer. Choose a directory"
 Section "install"
 SetOutPath $INSTDIR
-File rapcad.exe
-File libboost_thread-mgw45-mt-1_46_1.dll
-File libgcc_s_dw2-1.dll
-File libstdc++-6.dll
-File mingwm10.dll
-File QtCore4.dll
-File QtGui4.dll
-File QtOpenGL4.dll
-File libmpfr-4.dll
-File libgmp-10.dll
+File release\rapcad.exe
+File release\Qt5Core.dll
+File release\Qt5Gui.dll
+File release\Qt5OpenGL.dll
+File release\Qt5Widgets.dll
+File release\libCGAL.dll
+File release\libCGAL_Core.dll
+File release\libgcc_s_dw2-1.dll
+File release\libgmp-10.dll
+File release\libmpfr-4.dll
+File release\libstdc++-6.dll
+File release\libwinpthread-1.dll
+File release\user_guide.html
+File /r release\platforms
 CreateShortCut $SMPROGRAMS\RapCAD.lnk $INSTDIR\rapcad.exe
 WriteUninstaller $INSTDIR\Uninstall.exe
 WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\RapCAD" "DisplayName" "RapCAD (remove only)"
@@ -22,15 +27,20 @@ SectionEnd
 Section "Uninstall"
 Delete $INSTDIR\Uninstall.exe
 Delete $INSTDIR\rapcad.exe
-Delete $INSTDIR\libboost_thread-mgw45-mt-1_46_1.dll
+Delete $INSTDIR\Qt5Core.dll
+Delete $INSTDIR\Qt5Gui.dll
+Delete $INSTDIR\Qt5OpenGL.dll
+Delete $INSTDIR\Qt5Widgets.dll
+Delete $INSTDIR\libCGAL.dll
+Delete $INSTDIR\libCGAL_Core.dll
 Delete $INSTDIR\libgcc_s_dw2-1.dll
-Delete $INSTDIR\libstdc++-6.dll
-Delete $INSTDIR\mingwm10.dll
-Delete $INSTDIR\QtCore4.dll
-Delete $INSTDIR\QtGui4.dll
-Delete $INSTDIR\QtOpenGL4.dll
-Delete $INSTDIR\libmpfr-4.dll
 Delete $INSTDIR\libgmp-10.dll
+Delete $INSTDIR\libmpfr-4.dll
+Delete $INSTDIR\libstdc++-6.dll
+Delete $INSTDIR\libwinpthread-1.dll
+Delete $INSTDIR\user_guide.html
+Delete $INSTDIR\platforms\qwindows.dll
+RMDir  $INSTDIR\platforms
 Delete $SMPROGRAMS\RapCAD.lnk
 DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\RapCAD"
 RMDir $INSTDIR

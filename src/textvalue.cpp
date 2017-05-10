@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
  */
 
 #include "textvalue.h"
+#include "numbervalue.h"
+#include "booleanvalue.h"
+#include "textiterator.h"
 
 TextValue::TextValue(QString value)
 {
@@ -28,18 +31,56 @@ QString TextValue::getValueString() const
 	return this->text;
 }
 
+TextValue* TextValue::toText()
+{
+	return this;
+}
+
+Value* TextValue::toNumber()
+{
+	bool ok;
+	decimal n=to_decimal(text,&ok);
+	if(ok)
+		return new NumberValue(n);
+	else
+		return Value::undefined();
+}
+
+Iterator<Value*>* TextValue::createIterator()
+{
+	return new TextIterator(text);
+}
+
 bool TextValue::isTrue() const
 {
 	return !this->text.isEmpty();
 }
 
+Value* TextValue::operation(Expression::Operator_e op)
+{
+	if(op==Expression::Length) {
+		return new NumberValue(this->text.length());
+	}
+	return this;
+}
+
 Value* TextValue::operation(Value& v,Expression::Operator_e e)
 {
 	TextValue* that=dynamic_cast<TextValue*>(&v);
-	if(that)
-		return new TextValue(operation(this->text,e,that->text));
+	if(that) {
+		if(isComparison(e)) {
+			return new BooleanValue(operation(this,e,that));
+		} else {
+			return new TextValue(operation(this->text,e,that->text));
+		}
+	}
 
-	return this;
+	NumberValue* num=dynamic_cast<NumberValue*>(&v);
+	if(num)
+		if(e==Expression::Index)
+			return new TextValue(this->text.at(num->toInteger()));
+
+	return Value::operation(v,e);
 }
 
 QString TextValue::operation(QString left, Expression::Operator_e e, QString right)
@@ -49,5 +90,17 @@ QString TextValue::operation(QString left, Expression::Operator_e e, QString rig
 		return left.append(right);
 	default:
 		return this->text;
+	}
+}
+
+bool TextValue::operation(TextValue* left, Expression::Operator_e e, TextValue* right)
+{
+	switch(e) {
+	case Expression::Equal:
+		return left->text==right->text;
+	case Expression::NotEqual:
+		return left->text!=right->text;
+	default:
+		return basicOperation(left->isTrue(),e,right->isTrue());
 	}
 }

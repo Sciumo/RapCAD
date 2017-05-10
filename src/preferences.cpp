@@ -1,8 +1,41 @@
+/*
+ *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
+ *   Copyright (C) 2010-2014 Giles Bathgate
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "preferences.h"
+
+#include <math.h>
+#define LOG10_2 0.30102999566398119521 /* log10(2) = log base 10 of 2 */
+
+#if USE_CGAL
+#include <CGAL/Gmpfr.h>
+#endif
 
 Preferences::Preferences()
 {
 	settings = new QSettings();
+	updatePrecision();
+}
+
+void Preferences::updatePrecision()
+{
+	precision=floor(getPrecision()/LOG10_2);
+#if USE_CGAL
+	CGAL::Gmpfr::set_default_precision(precision);
+#endif
 }
 
 Preferences* Preferences::instance=NULL;
@@ -15,59 +48,100 @@ Preferences* Preferences::getInstance()
 	return instance;
 }
 
-double Preferences::getDefaultRotationX()
+int Preferences::getPrecision()
 {
-	return settings->value("DefaultRotationX",35.0).toDouble();
+	return settings->value("Precision",16).toInt();
 }
 
-double Preferences::getDefaultRotationZ()
+void Preferences::setPrecision(int p)
 {
-	return settings->value("DefaultRotationZ",35.0).toDouble();
+	settings->setValue("Precision",p);
+	updatePrecision();
 }
 
-double Preferences::getDefaultX()
+bool Preferences::getFunctionRounding()
 {
-	return settings->value("DefaultX",0.0).toDouble();
+	return settings->value("FunctionRounding",true).toBool();
 }
 
-double Preferences::getDefaultZ()
+void Preferences::setFunctionRounding(bool b)
 {
-	return settings->value("DefaultZ",0.0).toDouble();
+	settings->setValue("FunctionRounding",b);
 }
 
-double Preferences::getDefaultDistance()
+bool Preferences::getRationalFormat()
 {
-	return settings->value("DefaultDistance",500.0).toDouble();
+	return settings->value("RationalFormat",false).toBool();
 }
 
-void Preferences::setDefaultRotationX(double x)
+void Preferences::setRationalFormat(bool b)
+{
+	settings->setValue("RationalFormat",b);
+}
+
+float Preferences::getDefaultRotationX()
+{
+	return settings->value("DefaultRotationX",35.0).toFloat();
+}
+
+float Preferences::getDefaultRotationY()
+{
+	return settings->value("DefaultRotationY",0.0).toFloat();
+}
+
+float Preferences::getDefaultRotationZ()
+{
+	return settings->value("DefaultRotationZ",35.0).toFloat();
+}
+
+float Preferences::getDefaultX()
+{
+	return settings->value("DefaultX",0.0).toFloat();
+}
+
+float Preferences::getDefaultZ()
+{
+	return settings->value("DefaultZ",0.0).toFloat();
+}
+
+float Preferences::getDefaultDistance()
+{
+	return settings->value("DefaultDistance",500.0).toFloat();
+}
+
+void Preferences::setDefaultRotationX(float x)
 {
 	settings->setValue("DefaultRotationX",x);
 }
 
-void Preferences::setDefaultRotationZ(double z)
+void Preferences::setDefaultRotationY(float y)
+{
+	settings->setValue("DefaultRotationY",y);
+}
+
+void Preferences::setDefaultRotationZ(float z)
 {
 	settings->setValue("DefaultRotationZ",z);
 }
 
-void Preferences::setDefaultX(double x)
+void Preferences::setDefaultX(float x)
 {
 	settings->setValue("DefaultX",x);
 }
 
-void Preferences::setDefaultZ(double z)
+void Preferences::setDefaultZ(float z)
 {
 	settings->setValue("DefaultZ",z);
 }
 
-void Preferences::setDefaultDistance(double d)
+void Preferences::setDefaultDistance(float d)
 {
 	settings->setValue("DefaultDistance",d);
 }
 
 QColor Preferences::getMarkedVertexColor()
 {
-	return settings->value("MarkedVertexColor",QColor(0xb7,0xe8,0x5c)).value<QColor>();
+	return settings->value("MarkedVertexColor",QColor(0xff,0xff,0xff)).value<QColor>();
 }
 
 void Preferences::setMarkedVertexColor(QColor c)
@@ -77,7 +151,7 @@ void Preferences::setMarkedVertexColor(QColor c)
 
 QColor Preferences::getVertexColor()
 {
-	return settings->value("VertexColor",QColor(0xff,0xf6,0x7c)).value<QColor>();
+	return settings->value("VertexColor",QColor(0xff,0xff,0xff)).value<QColor>();
 }
 
 void Preferences::setVertexColor(QColor c)
@@ -87,7 +161,7 @@ void Preferences::setVertexColor(QColor c)
 
 QColor Preferences::getMarkedEdgeColor()
 {
-	return settings->value("MarkedEdgeColor",QColor(0xab,0xd8,0x56)).value<QColor>();
+	return settings->value("MarkedEdgeColor",QColor(0x00,0x00,0x00)).value<QColor>();
 }
 
 void Preferences::setMarkedEdgeColor(QColor c)
@@ -97,7 +171,7 @@ void Preferences::setMarkedEdgeColor(QColor c)
 
 QColor Preferences::getEdgeColor()
 {
-	return settings->value("EdgeColor",QColor(0xff,0xec,0x5e)).value<QColor>();
+	return settings->value("EdgeColor",QColor(0x00,0x00,0x00)).value<QColor>();
 }
 
 void Preferences::setEdgeColor(QColor c)
@@ -107,7 +181,7 @@ void Preferences::setEdgeColor(QColor c)
 
 QColor Preferences::getMarkedFacetColor()
 {
-	return settings->value("MarkedFacetColor",QColor(0x9d,0xcb,0x51)).value<QColor>();
+	return settings->value("MarkedFacetColor",QColor(0xff,0x55,0x00)).value<QColor>();
 }
 
 void Preferences::setMarkedFacetColor(QColor c)
@@ -117,7 +191,7 @@ void Preferences::setMarkedFacetColor(QColor c)
 
 QColor Preferences::getFacetColor()
 {
-	return settings->value("FacetColor",QColor(0xf9,0xd7,0x2c)).value<QColor>();
+	return settings->value("FacetColor",QColor(0xff,0xaa,0x00)).value<QColor>();
 }
 
 void Preferences::setFacetColor(QColor c)
@@ -137,7 +211,7 @@ void Preferences::setShowAxes(bool show)
 
 bool Preferences::getShowEdges()
 {
-	return settings->value("ShowEdges",false).toBool();
+	return settings->value("ShowEdges",true).toBool();
 }
 
 void Preferences::setShowEdges(bool show)
@@ -233,6 +307,46 @@ QSize Preferences::getWindowSize()
 void Preferences::setWindowSize(QSize s)
 {
 	settings->setValue("WindowSize",s);
+}
+
+float Preferences::getVertexSize()
+{
+	return settings->value("VertexSize",0).toFloat();
+}
+
+void Preferences::setVertexSize(float s)
+{
+	settings->setValue("VertexSize",s);
+}
+
+float Preferences::getEdgeSize()
+{
+	return settings->value("EdgeSize",1).toFloat();
+}
+
+void Preferences::setEdgeSize(float s)
+{
+	settings->setValue("EdgeSize",s);
+}
+
+bool Preferences::getAutoSaveOnCompile()
+{
+	return settings->value("AutoSaveOnCompile",false).toBool();
+}
+
+void Preferences::setAutoSaveOnCompile(bool b)
+{
+	settings->setValue("AutoSaveOnCompile",b);
+}
+
+void Preferences::setCacheEnabled(bool b)
+{
+	settings->setValue("CacheEnabled",b);
+}
+
+bool Preferences::getCacheEnabled()
+{
+	return settings->value("CacheEnabled",false).toBool();
 }
 
 void Preferences::syncDelete()

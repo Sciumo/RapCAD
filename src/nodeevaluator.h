@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 #define NODEEVALUATOR_H
 
 #include <QString>
-#include <QTextStream>
-#include "cgalprimitive.h"
+#include "primitive.h"
 #include "nodevisitor.h"
+#include "reporter.h"
 #include "node/primitivenode.h"
 #include "node/polylinenode.h"
 #include "node/unionnode.h"
+#include "node/groupnode.h"
 #include "node/differencenode.h"
 #include "node/intersectionnode.h"
 #include "node/symmetricdifferencenode.h"
@@ -41,12 +42,30 @@
 #include "node/outlinenode.h"
 #include "node/importnode.h"
 #include "node/resizenode.h"
-#include "cgalexplorer.h"
+#include "node/alignnode.h"
+#include "node/pointnode.h"
+#include "node/slicenode.h"
+#include "node/productnode.h"
+#include "node/projectionnode.h"
+#include "node/decomposenode.h"
+#include "node/complementnode.h"
+#include "node/radialsnode.h"
+#include "node/volumesnode.h"
+#include "node/triangulatenode.h"
+#include "node/materialnode.h"
+#include "node/discretenode.h"
+#include "node/normalsnode.h"
+#include "node/simplifynode.h"
+#include "node/childrennode.h"
+
+#include "cachemanager.h"
 
 class NodeEvaluator : public NodeVisitor
 {
+	Q_DECLARE_TR_FUNCTIONS(NodeEvaluator)
 public:
 	enum Operation_e {
+		Group,
 		Union,
 		Difference,
 		Intersection,
@@ -54,11 +73,12 @@ public:
 		Minkowski
 	};
 
-	NodeEvaluator(QTextStream&);
+	NodeEvaluator(Reporter*);
 
 	void visit(PrimitiveNode*);
 	void visit(PolylineNode*);
 	void visit(UnionNode*);
+	void visit(GroupNode*);
 	void visit(DifferenceNode*);
 	void visit(IntersectionNode*);
 	void visit(SymmetricDifferenceNode*);
@@ -74,13 +94,32 @@ public:
 	void visit(ImportNode*);
 	void visit(TransformationNode*);
 	void visit(ResizeNode*);
+	void visit(AlignNode*);
+	void visit(PointNode*);
+	void visit(SliceNode*);
+	void visit(ProductNode*);
+	void visit(ProjectionNode*);
+	void visit(DecomposeNode*);
+	void visit(ComplementNode*);
+	void visit(RadialsNode*);
+	void visit(VolumesNode*);
+	void visit(TriangulateNode*);
+	void visit(MaterialNode*);
+	void visit(DiscreteNode*);
+	void visit(NormalsNode*);
+	void visit(SimplifyNode*);
+	void visit(ChildrenNode*);
 
-	CGAL::Point3 offset(const CGAL::Point3&,CGAL::Kernel3::FT);
-	void evaluate(Node*,Operation_e);
-	CGALPrimitive* getResult() const;
+	Primitive* getResult() const;
 private:
-	CGALPrimitive* result;
-	QTextStream& output;
+	Primitive* createPrimitive();
+	void evaluate(Node*,Operation_e);
+	void evaluate(Node*,Operation_e,Primitive*);
+	void evaluate(QList<Node*>,Operation_e,Primitive*);
+
+	Reporter* reporter;
+	Primitive* result;
+	Cache* cache;
 };
 
 #endif // NODEEVALUATOR_H

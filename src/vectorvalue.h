@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,12 +30,16 @@ public:
 	QString getValueString() const;
 	bool isTrue() const;
 	VectorValue* toVector(int);
+	Value* toNumber();
 	Point getPoint() const;
+	void getXYZ(decimal&,decimal&,decimal&);
 	Iterator<Value*>* createIterator();
-	QList<Value*> getChildren() const;
-private:
+	virtual QList<Value*> getChildren();
+protected:
+	VectorValue();
 	Value* operation(Expression::Operator_e);
 	Value* operation(Value&,Expression::Operator_e);
+private:
 	Expression::Operator_e convertOperation(Expression::Operator_e);
 	QList<Value*> children;
 };

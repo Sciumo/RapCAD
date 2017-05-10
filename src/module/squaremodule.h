@@ -2,13 +2,13 @@
 #define SQUAREMODULE_H
 
 #include "primitivemodule.h"
-#include "context.h"
 
 class SquareModule : public PrimitiveModule
 {
+	Q_DECLARE_TR_FUNCTIONS(SquareModule)
 public:
-	SquareModule();
-	Node* evaluate(Context*,QList<Node*>);
+	SquareModule(Reporter*);
+	Node* evaluate(Context*);
 };
 
 #endif // SQUAREMODULE_H

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,12 +20,15 @@
 
 Script::Script()
 {
+	fileLocation=NULL;
 }
 
 Script::~Script()
 {
-	for(int i =0; i<declarations.size(); i++)
-		delete declarations.at(i);
+	foreach(Declaration* d,declarations)
+		delete d;
+
+	delete fileLocation;
 }
 
 void Script::setDeclarations(QList<Declaration*> decls)
@@ -41,6 +44,11 @@ QList<Declaration*> Script::getDeclarations() const
 void Script::addDeclaration(Declaration* dec)
 {
 	declarations.prepend(dec);
+}
+
+void Script::appendDeclaration(Declaration* dec)
+{
+	declarations.append(dec);
 }
 
 void Script::removeDeclaration(Declaration* dec)
@@ -61,4 +69,14 @@ QList<QList<CodeDoc*> > Script::getDocumentation()
 void Script::accept(TreeVisitor& v)
 {
 	v.visit(this);
+}
+
+QFileInfo* Script::getFileLocation() const
+{
+	return fileLocation;
+}
+
+void Script::setFileLocation(QFileInfo* value)
+{
+	fileLocation = value;
 }

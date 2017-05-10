@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#if USE_CGAL
 #ifndef CGALRENDERER_H
 #define CGALRENDERER_H
 
@@ -23,29 +23,36 @@
 #include "contrib/OGL_helper.h"
 #include "renderer.h"
 #include "cgalprimitive.h"
+#include "simplerenderer.h"
 
 class CGALRenderer : public Renderer, private CGAL::OGL::Polyhedron
 {
 public:
-	CGALRenderer(const CGALPrimitive&);
+	CGALRenderer(Primitive*);
+	~CGALRenderer();
 	void draw(bool,bool);
+	void preferencesUpdated();
+	void setCompiling(bool);
 private:
-	enum Color_e {
-		VertexColor,
-		EdgeColor,
-		FacetColor
-	};
-	void setColor(Color_e,bool,QColor);
-	void setColor(Color_e,bool,CGAL::Color);
-	CGAL::Color getVertexColor(Vertex_iterator v) const;
-	CGAL::Color getEdgeColor(Edge_iterator e) const;
-	CGAL::Color getFacetColor(Halffacet_iterator f) const;
+	void setColor(CGAL::Color&,QColor);
+	CGAL::Color getVertexColor(bool mark) const;
+	CGAL::Color getEdgeColor(bool mark) const;
+	CGAL::Color getFacetColor(bool mark) const;
+	float getVertexSize() const;
+	float getEdgeSize() const;
 	CGAL::Color markedVertexColor;
 	CGAL::Color vertexColor;
 	CGAL::Color markedEdgeColor;
 	CGAL::Color edgeColor;
 	CGAL::Color markedFacetColor;
 	CGAL::Color facetColor;
+	float vertexSize;
+	float edgeSize;
+	void loadPreferences();
+	void desaturate(CGAL::Color& c);
+	void descendChildren(Primitive* pr);
+	SimpleRenderer* simple;
 };
 
 #endif // CGALRENDERER_H
+#endif

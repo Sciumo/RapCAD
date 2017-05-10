@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,23 +17,27 @@
  */
 
 #include "tokenbuilder.h"
+#include "decimal.h"
 #include "parser_yacc.h"
+
 #define YY_NULL 0
-extern int lexerlex_destroy();
-extern void lexerinclude(const char*);
+extern void lexerinit(AbstractTokenBuilder*,Reporter*,QString,bool);
+extern int lexerdestroy();
+extern void lexerinclude(QFileInfo);
 extern void lexererror();
 extern int lexerlex();
 extern int lexerleng;
 extern int lexerlineno;
 
-TokenBuilder::TokenBuilder()
+TokenBuilder::TokenBuilder(Reporter* r,QString s,bool b)
 {
-	position=1;
+	lexerinit(this,r,s,b);
+	position=0;
 }
 
 TokenBuilder::~TokenBuilder()
 {
-	lexerlex_destroy();
+	lexerdestroy();
 }
 
 int TokenBuilder::nextToken()
@@ -88,8 +92,7 @@ void TokenBuilder::buildIncludeFinish()
 
 	filename.clear();
 
-	const char* fullpath = fileinfo.absoluteFilePath().toLocal8Bit();
-	lexerinclude(fullpath);
+	lexerinclude(fileinfo);
 
 }
 
@@ -231,7 +234,17 @@ unsigned int TokenBuilder::buildDecrement()
 	return DEC;
 }
 
-unsigned int TokenBuilder::buildOuterProduct()
+unsigned int TokenBuilder::buildAddAssign()
+{
+	return ADDA;
+}
+
+unsigned int TokenBuilder::buildSubtractAssign()
+{
+	return SUBA;
+}
+
+unsigned int TokenBuilder::buildCrossProduct()
 {
 	return CP;
 }
@@ -281,6 +294,11 @@ unsigned int TokenBuilder::buildDivide()
 	return '/';
 }
 
+unsigned int TokenBuilder::buildLength()
+{
+	return '|';
+}
+
 unsigned int TokenBuilder::buildModulus()
 {
 	return '%';
@@ -293,7 +311,7 @@ unsigned int TokenBuilder::buildConcatenate()
 
 unsigned int TokenBuilder::buildAppend()
 {
-	return AP;
+	return APPEND;
 }
 
 unsigned int TokenBuilder::buildLegalChar(unsigned int c)
@@ -309,7 +327,7 @@ unsigned int TokenBuilder::buildIllegalChar()
 
 unsigned int TokenBuilder::buildNumber(QString str)
 {
-	parserlval.number = str.toDouble();
+	parserlval.number = new decimal(to_decimal(str));
 	return NUMBER;
 }
 
@@ -381,6 +399,7 @@ unsigned int TokenBuilder::buildCodeDocFinish()
 
 void TokenBuilder::buildWhiteSpaceError()
 {
+	position+=lexerleng;
 }
 
 void TokenBuilder::buildWhiteSpace()
@@ -400,5 +419,6 @@ void TokenBuilder::buildFileStart(QDir pth)
 
 void TokenBuilder::buildFileFinish()
 {
-	path_stack.pop();
+	if(!path_stack.isEmpty())
+		path_stack.pop();
 }

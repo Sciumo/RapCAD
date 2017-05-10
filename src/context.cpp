@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #include "context.h"
 #include "modulescope.h"
 
-Context::Context(QTextStream& s) : output(s)
+Context::Context()
 {
 	parent=NULL;
 	currentValue=NULL;
@@ -27,41 +27,55 @@ Context::Context(QTextStream& s) : output(s)
 	currentScope=NULL;
 }
 
-Module* Context::lookupModule(QString name)
+Context::~Context()
 {
-	if(!modules.contains(name)) {
-		foreach(Declaration* d,currentScope->getDeclarations()) {
-			Module* mod = dynamic_cast<Module*>(d);
-			if(mod && mod->getName() == name) {
-				modules.insert(name,mod);
-				return mod;
-			}
-		}
-		if(parent)
-			return parent->lookupModule(name);
-	}
-
-	return modules.value(name);
+	arguments.clear();
+	parameters.clear();
 }
 
-Function* Context::lookupFunction(QString name)
+void Context::setParent(Context* value)
 {
-	if(!functions.contains(name)) {
-		//We are not looking for the function within the function
-		//scope (which is invalid syntax) but rather in the current
-		//scope which could be a module or script
-		foreach(Declaration* d,currentScope->getDeclarations()) {
-			Function* func = dynamic_cast<Function*>(d);
-			if(func && func->getName() == name) {
-				functions.insert(name,func);
-				return func;
-			}
-		}
-		if(parent)
-			return parent->lookupFunction(name);
-	}
+	parent=value;
+}
 
-	return functions.value(name);
+void Context::setCurrentScope(Scope* value)
+{
+	currentScope=value;
+}
+
+Scope* Context::getCurrentScope()
+{
+	return currentScope;
+}
+
+void Context::setReturnValue(Value* value)
+{
+	returnValue=value;
+}
+
+Value* Context::getReturnValue()
+{
+	return returnValue;
+}
+
+Value* Context::getCurrentValue()
+{
+	return currentValue;
+}
+
+void Context::setCurrentValue(Value* value)
+{
+	currentValue=value;
+}
+
+QString Context::getCurrentName()
+{
+	return currentName;
+}
+
+void Context::setCurrentName(QString value)
+{
+	currentName=value;
 }
 
 bool Context::addVariable(Value* v)
@@ -79,71 +93,166 @@ void Context::setVariable(Value* v)
 	variables.insert(v->getName(),v);
 }
 
-Value* Context::lookupVariable(QString name,Variable::Type_e& type)
+Value* Context::lookupVariable(QString name,Variable::Storage_e& c,Layout* l)
 {
 	if(variables.contains(name)) {
-		Value* v=variables.value(name);
-		type=v->getType();
-		return v;
+		if(l->inScope(currentScope)) {
+			Value* v=variables.value(name);
+			c=v->getStorage();
+			return v;
+		}
 	} else if(parent) {
-		return parent->lookupVariable(name,type);
-	} else {
-		Value* v=new Value(); //undef
-		v->setType(type);
-		return v;
+		return parent->lookupVariable(name,c,l);
+	}
+
+	Value* v=Value::undefined();
+	v->setStorage(c);
+	return v;
+
+}
+
+/* Lookup child doesn't currently
+ * check the lexical scope of the
+ * parent */
+Node* Context::lookupChild(int index)
+{
+	QList<Node*> children=getInputNodes();
+	if(index>=0&&index<children.length())
+		return children.at(index);
+	if(parent)
+		return parent->lookupChild(index);
+
+	return NULL;
+}
+
+/* Lookup children doesn't currently
+ * check the lexical scope of the
+ * parent */
+QList<Node*> Context::lookupChildren()
+{
+	QList<Node*> children=getInputNodes();
+	if(children.length()>0)
+		return children;
+	if(parent)
+		return parent->lookupChildren();
+
+	return QList<Node*>();
+}
+
+void Context::setVariablesFromArguments()
+{
+	for(int i=0; i<parameters.size(); i++) {
+		Value* val=parameters.at(i);
+		bool found=false;
+		QString paramName=val->getName();
+		foreach(Value* arg,arguments) {
+			QString argName=arg->getName();
+			if(arg->isDefined()&&argName==paramName) {
+				val=arg;
+				found=true;
+				break;
+			}
+		}
+		if(!found&&i<arguments.size()) {
+			Value* arg=arguments.at(i);
+			QString argName=arg->getName();
+			if(arg->isDefined()&&argName.isEmpty()) {
+				val=arg;
+			}
+		}
+
+		variables.insert(paramName,val);
 	}
 }
 
-void Context::addModule(Module* mod)
+QList<Value*> Context::getArguments()
 {
-	modules.insert(mod->getName(),mod);
+	return arguments;
 }
 
-void Context::addFunction(Function* func)
+void Context::addArgument(Value* value)
 {
-	functions.insert(func->getName(),func);
+	arguments.append(value);
 }
 
-void Context::setArguments(QList<Value*> args, QList<Value*> params)
+void Context::clearArguments()
 {
-	for(int i=0; i<params.size(); i++) {
-		QString name = args.at(i)->getName();
-		if(name.isEmpty() || contains(params,name))
-			variables.insert(params.at(i)->getName(), args.at(i));
-	}
-}
-
-bool Context::contains(QList<Value*> params,QString name)
-{
-	foreach(Value* p, params)
-		if(p->getName() == name)
-			return true;
-	return false;
+	arguments.clear();
 }
 
 Value* Context::getArgument(int index, QString name)
 {
-	return matchArgument(true,false,index,name);
+	//TODO make matchLast work for name ending with any digit
+	bool matchLast = name.endsWith('1') || name.endsWith('2');
+
+	return matchArgumentIndex(true,matchLast,index,name);
 }
 
-Value* Context::getArgument(int index,QString name,bool matchLast)
+Value* Context::getArgumentDeprecatedModule(int index, QString deprecated, QString module, Reporter* r)
 {
-	return matchArgument(true,matchLast,index,name);
+	Value* v = matchArgumentIndex(false,false,index,deprecated);
+	if(v)
+		r->reportWarning(tr("'%1' parameter is deprecated use %2 instead").arg(deprecated).arg(module));
+	return v;
 }
 
-Value* Context::getArgumentDeprecated(int index, QString name, QString deprecated)
+Value* Context::getArgumentDeprecated(int index, QString name, QString deprecated, Reporter* r)
 {
-	Value* v = matchArgument(true,false,index,name);
+	Value* v = matchArgumentIndex(true,false,index,name);
 	if(!v) {
-		v = matchArgument(false,false,index,deprecated);
+		v = matchArgumentIndex(false,false,index,deprecated);
 		if(v)
-			output << "Warning '" << deprecated << "' parameter is deprecated use '" << name << "' instead\n";
+			r->reportWarning(tr("'%1' parameter is deprecated use '%2' instead").arg(deprecated).arg(name));
 	}
 
 	return v;
 }
 
-Value* Context::matchArgument(bool allowChar,bool matchLast, int index, QString name)
+void Context::clearParameters()
+{
+	parameters.clear();
+}
+
+void Context::addParameter(Value* value)
+{
+	parameters.append(value);
+}
+
+void Context::setInputNodes(QList<Node*> value)
+{
+	inputNodes=value;
+}
+
+QList<Node*> Context::getInputNodes()
+{
+	return inputNodes;
+}
+
+void Context::setCurrentNodes(QList<Node*> value)
+{
+	currentNodes=value;
+}
+
+QList<Node*> Context::getCurrentNodes()
+{
+	return currentNodes;
+}
+
+void Context::addCurrentNode(Node* value)
+{
+	currentNodes.append(value);
+}
+
+Value* Context::getArgumentSpecial(QString name)
+{
+	Value* v=matchArgument(false,false,name);
+	if(v && v->getStorage()==Variable::Special)
+		return v;
+
+	return NULL;
+}
+
+Value* Context::matchArgumentIndex(bool allowChar,bool matchLast, int index, QString name)
 {
 	if(index >= arguments.size())
 		return NULL;
@@ -153,6 +262,11 @@ Value* Context::matchArgument(bool allowChar,bool matchLast, int index, QString 
 	if(argName.isEmpty() || match(allowChar,matchLast,argName,name))
 		return arg;
 
+	return matchArgument(allowChar,matchLast,name);
+}
+
+Value* Context::matchArgument(bool allowChar,bool matchLast, QString name)
+{
 	foreach(Value* namedArg,arguments) {
 		QString namedArgName = namedArg->getName();
 		if(match(allowChar,matchLast,namedArgName,name))

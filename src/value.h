@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,22 +19,30 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+class VectorValue;
+class TextValue;
 #include <QString>
 #include "iterator.h"
 #include "expression.h"
 #include "variable.h"
+#include "decimal.h"
 
 class Value
 {
 public:
-	Value();
-	void setType(Variable::Type_e);
-	Variable::Type_e getType() const;
+	static Value* undefined();
+	virtual ~Value();
+	static void cleanup();
+	void setStorage(Variable::Storage_e);
+	Variable::Storage_e getStorage() const;
 	void setName(QString);
 	QString getName() const;
 	virtual QString getValueString() const;
 	virtual bool isTrue() const;
-	virtual class VectorValue* toVector(int);
+	bool isDefined() const;
+	virtual VectorValue* toVector(int);
+	virtual TextValue* toText();
+	virtual Value* toNumber();
 	virtual Iterator<Value*>* createIterator();
 	Value* operator^(Value&);
 	Value* operator*(Value&);
@@ -42,13 +50,17 @@ public:
 	Value* componentwiseMultiply(Value&);
 	Value* operator/(Value&);
 	Value* componentwiseDivide(Value&);
-	Value* outerProduct(Value& v);
+	Value* crossProduct(Value& v);
 	Value* operator%(Value&);
 	Value* operator+();
 	Value* operator+(Value&);
+	Value* operator+=(Value&);
 	Value* operator++(int);
+	Value* length();
+	Value* length(Value& v);
 	Value* operator-();
 	Value* operator-(Value&);
+	Value* operator-=(Value&);
 	Value* operator--(int);
 	Value* operator<(Value&);
 	Value* operator<=(Value&);
@@ -58,43 +70,41 @@ public:
 	Value* operator>(Value&);
 	Value* operator&&(Value&);
 	Value* operator||(Value&);
+	Value* operator[](Value&);
 	Value* operator!();
 
 	static Value* operation(Value*,Expression::Operator_e);
 	static Value* operation(Value*,Expression::Operator_e,Value*);
+	static bool compare(Value*,Expression::Operator_e,Value*);
+	static Value* compareAll(QList<Value*>,Expression::Operator_e);
+
 protected:
+	Value();
 	bool isComparison(Expression::Operator_e);
-	template <class A, class B>
-	A basicOperation(B,Expression::Operator_e,B);
-	template <class A, class B>
-	A basicOperation(B,Expression::Operator_e);
-private:
-	Variable::Type_e type;
-	QString name;
+	template <class T>
+	T basicOperation(T,Expression::Operator_e,T);
+	template <class T>
+	T basicOperation(T,Expression::Operator_e);
+
 	virtual Value* operation(Expression::Operator_e);
 	virtual Value* operation(Value&,Expression::Operator_e);
-	template<class T>
-	T modulus(T left, T right);
-	double modulus(double left, double right);
-	template<class T>
-	T exponent(T left, T right);
-	double exponent(double left, double right);
+private:
+	bool defined;
+	static QList<Value*> values;
+	Variable::Storage_e storageClass;
+	QString name;
+	bool modulus(bool,bool);
+	decimal modulus(decimal,decimal);
+	bool exponent(bool,bool);
+	decimal exponent(decimal,decimal);
+	bool logic(bool);
+	bool logic(decimal);
+	bool length(bool);
+	decimal length(decimal);
 };
 
-template<class T>
-T Value::modulus(T left, T right)
-{
-	return left%right;
-}
-
-template<class T>
-T Value::exponent(T left, T right)
-{
-	return left^right;
-}
-
-template <class A, class B>
-A Value::basicOperation(B left, Expression::Operator_e e, B right)
+template <class T>
+T Value::basicOperation(T left, Expression::Operator_e e, T right)
 {
 	switch(e) {
 	case Expression::Exponent:
@@ -109,6 +119,10 @@ A Value::basicOperation(B left, Expression::Operator_e e, B right)
 		return left+right;
 	case Expression::Subtract:
 		return left-right;
+	case Expression::AddAssign:
+		return left+=right;
+	case Expression::SubAssign:
+		return left-=right;
 	case Expression::LessThan:
 		return left<right;
 	case Expression::LessOrEqual:
@@ -122,16 +136,16 @@ A Value::basicOperation(B left, Expression::Operator_e e, B right)
 	case Expression::GreaterThan:
 		return left>right;
 	case Expression::LogicalAnd:
-		return left&&right;
+		return logic(left)&&logic(right);
 	case Expression::LogicalOr:
-		return left||right;
+		return logic(left)||logic(right);
 	default:
 		return left;
 	}
 }
 
-template <class A, class B>
-A Value::basicOperation(B left, Expression::Operator_e e)
+template <class T>
+T Value::basicOperation(T left, Expression::Operator_e e)
 {
 	switch(e) {
 	case Expression::Add:
@@ -139,13 +153,16 @@ A Value::basicOperation(B left, Expression::Operator_e e)
 	case Expression::Subtract:
 		return -left;
 	case Expression::Invert:
-		return !left;
+		return !logic(left);
 	case Expression::Increment:
 		return left+1;
 	case Expression::Decrement:
 		return left-1;
+	case Expression::Length:
+		return length(left);
 	default:
 		return left;
 	}
 }
+
 #endif // VALUE_H

@@ -1,0 +1,121 @@
+<input>                ::=
+		       <empty>
+		       "use" <input>
+		       <statement> <input>
+
+<statement>            ::=
+		       ';'
+		       '{' <inner_input> '}'
+		       <module_instantiation>
+		       <assignment>
+		       "module" <identifier> '(' <arguments_decl> <optional_commas> ')' <statement>
+		       "function" <identifier> '(' <arguments_decl> <optional_commas> ')' '=' <expr> ';'
+
+<inner_input>          ::=
+		       <empty>
+		       <statement> <inner_input>
+
+<assignment>           ::=
+		       <identifier> '=' <expr> ';'
+
+<module_instantiation> ::=
+		       '!' <module_instantiation>
+		       '#' <module_instantiation>
+		       '%' <module_instantiation>
+		       '*' <module_instantiation>
+		       <single_module_instantiation> <child_statement>
+		       <ifelse_statement>
+
+<ifelse_statement>     ::=
+		       <if_statement>
+		       <if_statement> "else" <child_statement>
+
+<if_statement>         ::=
+		       "if" '(' <expr> ')' <child_statement>
+
+<child_statements>     ::=
+		       <empty>
+		       <child_statements> <child_statement>
+		       <child_statements> <assignment>
+
+<child_statement>      ::=
+		       ';'
+		       '{' <child_statements> '}'
+		       <module_instantiation>
+
+<module_id>            ::=
+		       <identifier>
+		       "for"
+
+<single_module_instantiation> ::=
+		       <module_id> '(' <arguments_call> ')'
+
+<expr>                 ::=
+		       "true"
+		       "false"
+		       "undef"
+		       <identifier>
+		       <expr> '.' <identifier>
+		       <string>
+		       <number>
+		       "let" '(' <arguments_call> ')' <expr>
+		       '[' <expr> ':' <expr> ']'
+		       '[' <expr> ':' <expr> ':' <expr> ']'
+		       '[' <list_comprehension_elements> ']'
+		       '[' <optional_commas> ']'
+		       '[' <vector_expr> <optional_commas> ']'
+		       <expr> '*' <expr>
+		       <expr> '/' <expr>
+		       <expr> '%' <expr>
+		       <expr> '+' <expr>
+		       <expr> '-' <expr>
+		       <expr> '<' <expr>
+		       <expr> "<=" <expr>
+		       <expr> "==" <expr>
+		       <expr> "!=" <expr>
+		       <expr> ">=" <expr>
+		       <expr> '>' <expr>
+		       <expr> "&&" <expr>
+		       <expr> "||" <expr>
+		       '+' <expr>
+		       '-' <expr>
+		       '!' <expr>
+		       '(' <expr> ')'
+		       <expr> '?' <expr> ':' <expr>
+		       <expr> '[' <expr> ']'
+		       <identifier> '(' <arguments_call> ')'
+
+<list_comprehension_elements> ::=
+		       "let" '(' <arguments_call> ')' <list_comprehension_elements>
+		       "for" '(' <arguments_call> ')' <list_comprehension_elements_or_expr>
+		       "if" '(' <expr> ')' <list_comprehension_elements_or_expr>
+
+<list_comprehension_elements_or_expr> ::=
+		       <list_comprehension_elements>
+		       <expr>
+
+<optional_commas>      ::=
+		       ',' <optional_commas>
+		       <empty>
+
+<vector_expr>          ::=
+		       <expr>
+		       <vector_expr> ',' <optional_commas> <expr>
+
+<arguments_decl>       ::=
+		       <empty>
+		       <argument_decl>
+		       <arguments_decl> ',' <optional_commas> <argument_decl>
+
+<argument_decl>        ::=
+		       <identifier>
+		       <identifier> '=' <expr>
+
+<arguments_call>       ::=
+		       <empty>
+		       <argument_call>
+		       <arguments_call> ',' <optional_commas> <argument_call>
+
+<argument_call>        ::=
+		       <expr>
+		       <identifier> '=' <expr>

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,54 +17,70 @@
  */
 
 #include "module.h"
+#include "context.h"
 
 Module::Module()
 {
+	reporter=NULL;
 	scope=NULL;
+	auxilary=false;
+	deprecated=false;
 }
 
-Module::Module(const QString n) : name(n)
+Module::Module(Reporter* r,const QString n) : name(n)
 {
+	reporter=r;
 	scope=NULL;
+	auxilary=false;
+	deprecated=false;
 }
 
 Module::~Module()
 {
-	for(int i=0; i<parameters.size(); i++)
-		delete parameters.at(i);
+	foreach(Parameter* p,parameters)
+		delete p;
 
 	delete scope;
 }
 
 QString Module::getName() const
 {
-	return this->name;
+	return name;
 }
 
-void Module::setName(QString name)
+void Module::setName(QString n)
 {
-	this->name = name;
+	name=n;
 }
 
+QString Module::getDescription() const
+{
+	return description;
+}
+
+bool Module::getAuxilary() const
+{
+	return auxilary;
+}
 
 QList<Parameter*> Module::getParameters() const
 {
-	return this->parameters;
+	return parameters;
 }
 
 void Module::setParameters(QList<Parameter*> params)
 {
-	this->parameters = params;
+	parameters=params;
 }
 
 void Module::setScope(Scope* scp)
 {
-	this->scope = scp;
+	scope=scp;
 }
 
 Scope* Module::getScope() const
 {
-	return this->scope;
+	return scope;
 }
 
 void Module::accept(TreeVisitor& v)
@@ -72,7 +88,37 @@ void Module::accept(TreeVisitor& v)
 	v.visit(this);
 }
 
-Node* Module::evaluate(Context*,QList<Node*>)
+Node* Module::evaluate(Context*)
 {
 	return NULL;
+}
+
+void Module::addDescription(QString d)
+{
+	description=d;
+}
+
+void Module::addDeprecated(QString d)
+{
+	deprecated=true;
+	description=d;
+}
+
+void Module::addParameter(QString name, QString desc)
+{
+	Parameter* p=new Parameter();
+	p->setName(name);
+	p->addDescription(desc);
+	parameters.append(p);
+}
+
+Value* Module::getParameterArgument(Context* ctx, int index)
+{
+	return getParameterArgument(ctx,index,index);
+}
+
+Value* Module::getParameterArgument(Context* ctx, int index, int expectedIndex)
+{
+	Parameter* p=parameters.at(index);
+	return ctx->getArgument(expectedIndex,p->getName());
 }

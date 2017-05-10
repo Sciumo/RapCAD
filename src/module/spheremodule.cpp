@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,22 +18,19 @@
 
 #include "spheremodule.h"
 #include "numbervalue.h"
-#include "tau.h"
+#include "rmath.h"
+#include "node/pointnode.h"
 
-SphereModule::SphereModule() : PrimitiveModule("sphere")
+SphereModule::SphereModule(Reporter* r) : PrimitiveModule(r,"sphere")
 {
+	addDescription(tr("Constructs a sphere. The sphere will be centered at the origin."));
+	addParameter("radius",tr("The radius of the sphere."));
 }
 
-Node* SphereModule::evaluate(Context* ctx,QList<Node*>)
+Node* SphereModule::evaluate(Context* ctx)
 {
-	NumberValue* rValue=dynamic_cast<NumberValue*>(ctx->getArgument(0,"radius"));
-	Value* centerValue=ctx->getArgument(1,"center");
-
-	bool center=true;
-	if(centerValue)
-		center=centerValue->isTrue();
-
-	double r=1.0;
+	NumberValue* rValue=dynamic_cast<NumberValue*>(getParameterArgument(ctx,0));
+	decimal r=0.0;
 	if(rValue) {
 		r=rValue->getNumber();
 	} else {
@@ -41,61 +38,60 @@ Node* SphereModule::evaluate(Context* ctx,QList<Node*>)
 		if(dValue)
 			r=(dValue->getNumber()/2.0);
 	}
+	if(r==0.0)
+		return new PointNode();
 
-	double fn=0.0;
-	double fs=1.0;
-	double fa=12.0;
-	int f = getFragments(r,fn,fs,fa);
+	Fragment* fg = Fragment::createFragment(ctx);
+	int f = fg->getFragments(r);
+	delete fg;
+
 	int ringCount=f/2;
 
-	QList<Polygon> rings;
+	PrimitiveNode* p=new PrimitiveNode(reporter);
+	p->setChildren(ctx->getInputNodes());
+
 	for(int i=0; i<ringCount; i++) {
-		double phi = (M_PI*(i+0.5)) / ringCount;
-		double r2 = r*sin(phi);
-		double z = r*cos(phi);
-		Polygon c = getCircle(r2,f,z);
-		rings.append(c);
-	}
-
-	PrimitiveNode* p = new PrimitiveNode();
-
-	p->createPolygon();
-	for(int i=0; i<f; i++)
-		p->appendVertex(rings.at(0).at(i));
-
-	for(int i = 0; i < ringCount-1; i++) {
-		Polygon r1 = rings.at(i);
-		Polygon r2 = rings.at(i+1);
-		int r1i = 0, r2i = 0;
-		while(r1i < f || r2i < f) {
-			if(r1i >= f)
-				goto next_r2;
-			if(r2i >= f)
-				goto next_r1;
-			if((double)r1i / f <
-					(double)r2i / f) {
-next_r1:
-				p->createPolygon();
-				int r1j = (r1i+1) % f;
-				p->prependVertex(r1.at(r1i));
-				p->prependVertex(r1.at(r1j));
-				p->prependVertex(r2.at(r2i % f));
-				r1i++;
-			} else {
-next_r2:
-				p->createPolygon();
-				int r2j = (r2i+1) % f;
-				p->appendVertex(r2.at(r2i));
-				p->appendVertex(r2.at(r2j));
-				p->appendVertex(r1.at(r1i % f));
-				r2i++;
-			}
+		decimal phi = (r_pi()*(i+0.5)) / ringCount;
+		decimal r2 = r*r_sin(phi);
+		decimal z = r*r_cos(phi);
+		QList<Point> c = getCircle(r2,f,z);
+		foreach(Point pt,c) {
+			p->createVertex(pt);
 		}
 	}
 
-	p->createPolygon();
-	for(int i=0; i<f; i++)
-		p->prependVertex(rings.at(ringCount-1).at(i));
+	Polygon* pg=p->createPolygon();
+	for(int i=0; i<f; i++) {
+		pg->append(i);
+	}
+
+	for(int i=0; i<ringCount-1; i++) {
+		int i1=i*f;
+		int i2=(i+1)*f;
+		for(int j=0; j<f; j++) {
+			int j2=(j+1)%f;
+
+			int o=j+i1;
+			int k=j2+i1;
+			int m=j2+i2;
+			int l=j+i2;
+
+			pg=p->createPolygon();
+			pg->append(k);
+			pg->append(o);
+			pg->append(l);
+
+			pg=p->createPolygon();
+			pg->append(l);
+			pg->append(m);
+			pg->append(k);
+		}
+	}
+
+	pg=p->createPolygon();
+	for(int i=f*ringCount; i>f*(ringCount-1); i--) {
+		pg->append(i-1);
+	}
 
 	return p;
 }

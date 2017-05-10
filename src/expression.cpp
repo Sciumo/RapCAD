@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ QString Expression::getOpString() const
 	case Exponent:
 		result.append('^');
 		break;
+	case DotProduct:
 	case Multiply:
 		result.append('*');
 		break;
@@ -57,7 +58,7 @@ QString Expression::getOpString() const
 	case Decrement:
 		result.append("--");
 		break;
-	case OuterProduct:
+	case CrossProduct:
 		result.append("**");
 		break;
 	case Modulus:
@@ -102,8 +103,16 @@ QString Expression::getOpString() const
 	case Index:
 		result.append("[]");
 		break;
-	default:
-		result.append("Unknown");
+	case AddAssign:
+		result.append("+=");
+		break;
+	case SubAssign:
+		result.append("-=");
+		break;
+	case Length:
+		result.append("|");
+	case None:
+		break;
 	}
 	return result;
 }
@@ -121,4 +130,14 @@ void Expression::setOp(Operator_e op)
 Expression::Operator_e Expression::getOp() const
 {
 	return this->op;
+}
+
+int Expression::getLineNumber() const
+{
+	return lineNumber;
+}
+
+void Expression::setLineNumber(int value)
+{
+	lineNumber=value;
 }

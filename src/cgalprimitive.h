@@ -1,34 +1,108 @@
+/*
+ *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
+ *   Copyright (C) 2010-2014 Giles Bathgate
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#if USE_CGAL
 #ifndef CGALPRIMITIVE_H
 #define CGALPRIMITIVE_H
 
-#include <QVector>
-#include "cgalpolygon.h"
+#include "cgal.h"
 
-class CGALPrimitive
+#include <QVector>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Nef_nary_union_3.h>
+#include "cgalpolygon.h"
+#include "cgalvolume.h"
+#include "primitive.h"
+
+namespace CGAL
+{
+typedef Polyhedron_3<Kernel3> Polyhedron3;
+typedef Nef_polyhedron_3<Kernel3> NefPolyhedron3;
+}
+
+class CGALPrimitive : public Primitive
 {
 public:
 	CGALPrimitive();
-	CGALPrimitive(QVector<CGAL::Point3> pl);
+	~CGALPrimitive();
 	CGALPrimitive(CGAL::Polyhedron3 poly);
-	CGALPolygon* createPolygon();
+	void setType(Primitive_t);
+	Polygon* createPolygon();
+	void createVertex(Point);
 	void appendVertex(CGAL::Point3);
 	void prependVertex(CGAL::Point3);
-	CGALPrimitive* buildVolume();
-	CGALPrimitive* join(const CGALPrimitive*);
-	CGALPrimitive* intersection(const CGALPrimitive*);
-	CGALPrimitive* difference(const CGALPrimitive*);
-	CGALPrimitive* symmetric_difference(const CGALPrimitive*);
-	CGALPrimitive* minkowski(const CGALPrimitive*);
-	CGALPrimitive* inset(double);
-	void transform(const CGAL::AffTransformation3&);
-	QList<CGALPolygon*> getPolygons() const;
-	QList<CGAL::Point3> getPoints() const;
-	const CGAL::NefPolyhedron3& getNefPolyhedron() const;
+	bool overlaps(Primitive*);
+	Primitive* group(Primitive*);
+	Primitive* join(Primitive*);
+	void add(Primitive*,bool);
+	Primitive* combine();
+	Primitive* intersection(Primitive*);
+	Primitive* difference(Primitive*);
+	Primitive* symmetric_difference(Primitive*);
+	Primitive* minkowski(Primitive*);
+	Primitive* inset(const decimal);
+	Primitive* decompose();
+	Primitive* complement();
+	Primitive* copy();
+	Primitive* triangulate();
+	Primitive* simplify(int);
+	CGAL::Cuboid3 getBounds();
+	void transform(TransformMatrix*);
+	/* Don't call this method instead use getCGALPolygons */
+	Q_DECL_DEPRECATED QList<Polygon*> getPolygons() const;
+	QList<CGALPolygon*> getCGALPolygons() const;
+	/* Don't call this method instead use getCGALPoints */
+	Q_DECL_DEPRECATED QList<Point> getPoints() const;
+	QList<CGAL::Point3> getCGALPoints() const;
+	const CGAL::NefPolyhedron3& getNefPolyhedron();
 	CGAL::Polyhedron3* getPolyhedron();
+	bool isEmpty();
+	bool isFullyDimentional();
+	QList<Primitive*> getChildren();
+	void appendChild(Primitive*);
+	void discrete(int);
+	CGAL::Circle3 getRadius();
+	CGALVolume getVolume(bool);
 private:
-	QList<CGALPolygon*> polygons;
+	void init();
+	void buildPrimitive();
+	QList<Primitive*> children;
+	CGAL::NefPolyhedron3* createPolyline(QVector<CGAL::Point3> pl);
 	QList<CGAL::Point3> points;
+	QList<CGALPolygon*> polygons;
 	CGAL::NefPolyhedron3* nefPolyhedron;
+	Primitive_t type;
+
+	/* Simple wrapper class to enable Primitive
+	 * to be used with CGAL::Nef_nary_union_3 */
+	class Unionable
+	{
+	public:
+		Unionable() {}
+		Unionable(Primitive* p, bool f) { primitive=p; force=f; }
+		Unionable& operator+(Unionable&);
+		Primitive* primitive;
+		bool force;
+	};
+
+	CGAL::Nef_nary_union_3<Unionable>* nUnion;
+	static CGAL::NefPolyhedron3* singlePoint;
 };
 
 #endif // CGALPRIMITIVE_H
+#endif

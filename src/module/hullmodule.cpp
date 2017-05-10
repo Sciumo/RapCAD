@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,15 +17,16 @@
  */
 
 #include "hullmodule.h"
+#include "context.h"
 #include "node/hullnode.h"
 
-HullModule::HullModule() : Module("hull")
+HullModule::HullModule(Reporter* r) : Module(r,"hull")
 {
 }
 
-Node* HullModule::evaluate(Context*,QList<Node*> childs)
+Node* HullModule::evaluate(Context* ctx)
 {
 	HullNode* d = new HullNode();
-	d->setChildren(childs);
+	d->setChildren(ctx->getInputNodes());
 	return d;
 }

@@ -1,6 +1,6 @@
 /*
  *   RapCAD - Rapid prototyping CAD IDE (www.rapcad.org)
- *   Copyright (C) 2010-2011 Giles Bathgate
+ *   Copyright (C) 2010-2014 Giles Bathgate
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "declaration.h"
 #include "scope.h"
 #include "codedoc.h"
+#include "reporter.h"
 
 class Script : public Scope
 {
@@ -33,13 +34,19 @@ public:
 	void setDeclarations(QList<Declaration*>);
 	QList<Declaration*> getDeclarations() const;
 	void addDeclaration(Declaration*);
+	void appendDeclaration(Declaration*);
 	void removeDeclaration(Declaration*);
 	void addDocumentation(QList<CodeDoc*>);
 	QList<QList<CodeDoc*> > getDocumentation();
 	void accept(TreeVisitor&);
+	QFileInfo* getFileLocation() const;
+	void setFileLocation(QFileInfo*);
 private:
 	QList<Declaration*> declarations;
 	QList<QList<CodeDoc*> > documentation;
+	QFileInfo* fileLocation;
 };
+
+extern Script* parse(QString,Reporter*,bool);
 
 #endif // SCRIPT_H
